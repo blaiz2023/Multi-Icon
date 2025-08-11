@@ -1,6 +1,7 @@
 unit gossio;
 
 interface
+{$ifdef gui4} {$define gui3} {$define gamecore}{$endif}
 {$ifdef gui3} {$define gui2} {$define net} {$define ipsec} {$endif}
 {$ifdef gui2} {$define gui}  {$define jpeg} {$endif}
 {$ifdef gui} {$define snd} {$endif}
@@ -8,7 +9,7 @@ interface
 {$ifdef con2} {$define jpeg} {$endif}
 {$ifdef fpc} {$mode delphi}{$define laz} {$define d3laz} {$undef d3} {$else} {$define d3} {$define d3laz} {$undef laz} {$endif}
 uses gossroot, gosswin;
-{$B-} {generate short-circuit boolean evaluation code -> stop evaluating logic as soon as value is known}
+{$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-} { set critical compiler conditionals for proper compilation - 10aug2025 }
 //## ==========================================================================================================================================================================================================================
 //##
 //## MIT License
@@ -29,9 +30,9 @@ uses gossroot, gosswin;
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. disk/folder/file support (gossio.pas)
-//## Version.................. 4.00.5027 (+311)
+//## Version.................. 4.00.5040 (+314)
 //## Items.................... 6
-//## Last Updated ............ 12jun2025, 01jun2025, 28may2025, 01may2025, 11apr2025, 31mar2025, 21mar2025, 08mar2025, 20feb2025, 11jan2025, 18dec2024, 18nov2024, 15nov2024, 22aug2024, 20jul2024, 23jun2024, 30apr2024
+//## Last Updated ............ 11aug2025, 12jun2025, 01jun2025, 28may2025, 01may2025, 11apr2025, 31mar2025, 21mar2025, 08mar2025, 20feb2025, 11jan2025, 18dec2024, 18nov2024, 15nov2024, 22aug2024, 20jul2024, 23jun2024, 30apr2024
 //## Lines of Code............ 5,400+
 //##
 //## main.pas ................ app code
@@ -45,12 +46,14 @@ uses gossroot, gosswin;
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
 //## gosszip.pas ............. zip support
 //## gossjpg.pas ............. jpeg support
+//## gossgame.pas ............ game support (optional)
+//## gamefiles.pas ........... internal files for game (optional)
 //##
 //## ==========================================================================================================================================================================================================================
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
 //## | filecache__*           | family of procs   | 1.00.152  | 29apr2024   | Cache open file handles for faster repeat file IO operations, 12apr2024: created
-//## | io__*                  | family of procs   | 1.00.3700 | 12jun2025   | Disk, folder and file procs + 64bit file support, 11jun2025, 18may2025, 14may2025, 11apr2025, 20feb2025, 25jan2025, 11jan2025: fixed "io__fromfile64c()" for "!:\" files, 20dec2024, 16dec2024: io__copyfile upgraded, 18nov2024: tea3 format detection, 22aug2024: io__folderlist procs added, 19jul2024: io__filelist1/21() subfolder support added, 30apr2024: fixed io__ double ptr ref, 30apr2024: io__tofileex64() updated to flush buffer for correct nav__* filesize reporting, 17apr2024: procs renamed
+//## | io__*                  | family of procs   | 1.00.3710 | 11aug2025   | Disk, folder and file procs + 64bit file support, 12jun2025, 11jun2025, 18may2025, 14may2025, 11apr2025, 20feb2025, 25jan2025, 11jan2025: fixed "io__fromfile64c()" for "!:\" files, 20dec2024, 16dec2024: io__copyfile upgraded, 18nov2024: tea3 format detection, 22aug2024: io__folderlist procs added, 19jul2024: io__filelist1/21() subfolder support added, 30apr2024: fixed io__ double ptr ref, 30apr2024: io__tofileex64() updated to flush buffer for correct nav__* filesize reporting, 17apr2024: procs renamed
 //## | nav__*                 | family of procs   | 1.00.300  | 26feb2024   | Worker procs for file/folder/navigation lists
 //## | idisk__*               | family of procs   | 1.00.132  | 15mar2025   | Internal disk support "!:\" - 20jul2024: reintegrated into Gossamer
 //## | s12__*                 | family of procs   | 1.00.045  | 08mar2025   | Read/write 12bit io streams
@@ -286,6 +289,7 @@ function io__folderexists(const x:string):boolean;//01may2025, 15mar2020, 14dec2
 function io__deletefolder(x:string):boolean;//13feb2024
 function io__makefolder(x:string):boolean;//01may2025, 15mar2020, 19may2019
 function io__makefolder2(const x:string):string;//01may2025
+function io__makefolderchain(x:string):boolean;//11aug2025
 //.simple file list support - 19jul2024, 31dec2023, 06oct2022
 function io__filelist(xoutlist:tdynamicstring;xfullfilenames:boolean;xfolder,xmasklist,xemasklist:string):boolean;//06oct2022
 function io__filelist1(xoutlist:tdynamicstring;xfullfilenames,xsubfolders:boolean;xfolder,xmasklist,xemasklist:string):boolean;//06oct2022
@@ -457,8 +461,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,7)='gossio.') then strdel1(xname,1,7) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.5027'
-else if (xname='date')       then result:='12jun2025'
+if      (xname='ver')        then result:='4.00.5040'
+else if (xname='date')       then result:='11aug2025'
 else if (xname='name')       then result:='IO'
 else
    begin
@@ -1574,6 +1578,47 @@ if io__local(x) and io__driveexists(x) then
    end;
 except;end;
 end;
+
+function io__makefolderchain(x:string):boolean;//11aug2025
+var
+   p:longint;
+   xfailed:boolean;
+begin
+//defaults
+result:=false;
+
+try
+//check
+if (x<>'') then x:=io__asfolder(x) else exit;
+
+//get
+if io__local(x) and io__driveexists(x) then
+   begin
+
+   //init
+   xfailed:=false;
+
+   //get
+   for p:=1 to low__len(x) do if (x[p-1+stroffset]='\') then
+      begin
+
+      if (not io__folderexists( strcopy1(x,1,p) )) and (not io__makefolder( strcopy1(x,1,p) )) then
+         begin
+         xfailed:=true;
+         break;
+         end;
+
+      end;//p
+
+   //successful
+   result:=(not xfailed) and io__folderexists(x);
+
+   end;
+
+except;end;
+end;
+
+
 
 function io__exemarker(x:tstr8):boolean;//14nov2023
 var

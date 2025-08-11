@@ -1,14 +1,15 @@
 unit gosszip;
 
 interface
+{$ifdef gui4} {$define gui3} {$define gamecore}{$endif}
 {$ifdef gui3} {$define gui2} {$define net} {$define ipsec} {$endif}
 {$ifdef gui2} {$define gui}  {$define jpeg} {$endif}
 {$ifdef gui} {$define snd} {$endif}
 {$ifdef con3} {$define con2} {$define net} {$define ipsec} {$endif}
 {$ifdef con2} {$define jpeg} {$endif}
 {$ifdef fpc} {$mode delphi}{$define laz} {$define d3laz} {$undef d3} {$else} {$define d3} {$define d3laz} {$undef laz} {$endif}
-uses gossroot {$ifdef laz},windows, sysutils, zbase, zdeflate, zinflate{$endif};
-{$B-} {generate short-circuit boolean evaluation code -> stop evaluating logic as soon as value is known}
+uses gossroot {$ifdef laz}, zbase, zdeflate, zinflate{$endif};
+{$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-} { set critical compiler conditionals for proper compilation - 10aug2025 }
 //## ==========================================================================================================================================================================================================================
 //##
 //## MIT License
@@ -28,11 +29,11 @@ uses gossroot {$ifdef laz},windows, sysutils, zbase, zdeflate, zinflate{$endif};
 //## CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //##
 //## ==========================================================================================================================================================================================================================
-//## Library.................. ZIP support (gosszip.pas)
-//## Version.................. 4.00.978 (+102)
+//## Library.................. Zip support (gosszip.pas)
+//## Version.................. 4.00.185 (+115)
 //## Items.................... 6
-//## Last Updated ............ 09jun2025, 28may2025, 13may2025, 29apr2025, 22apr2025, 04apr2025, 27jan2025, 05dec2024, 01dec2024, 26nov2024, 15nov2024, 11nov2024, 10aug2024, 24jun2024, 17apr2024
-//## Lines of Code............ 3,900+
+//## Last Updated ............ 18jun2025, 09jun2025, 28may2025, 13may2025, 29apr2025, 22apr2025, 04apr2025, 27jan2025, 05dec2024, 01dec2024, 26nov2024, 15nov2024, 11nov2024, 10aug2024, 24jun2024, 17apr2024
+//## Lines of Code............ 400+
 //##
 //## main.pas ................ app code
 //## gossroot.pas ............ console/gui app startup and control
@@ -45,6 +46,8 @@ uses gossroot {$ifdef laz},windows, sysutils, zbase, zdeflate, zinflate{$endif};
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
 //## gosszip.pas ............. zip support
 //## gossjpg.pas ............. jpeg support
+//## gossgame.pas ............ game support (optional)
+//## gamefiles.pas ........... internal files for game (optional)
 //##
 //## ==========================================================================================================================================================================================================================
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
@@ -86,13 +89,13 @@ try
 //init
 xname:=strlow(xname);
 
-//check -> xname must be "gossgui.*"
-if (strcopy1(xname,1,8)='gossgui.') then strdel1(xname,1,8) else exit;
+//check -> xname must be "gosszip.*"
+if (strcopy1(xname,1,8)='gosszip.') then strdel1(xname,1,8) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.070'
-else if (xname='date')       then result:='04may2025'
-else if (xname='name')       then result:='ZIP'
+if      (xname='ver')        then result:='4.00.185'
+else if (xname='date')       then result:='18jun2025'
+else if (xname='name')       then result:='Zip'
 else
    begin
    //nil

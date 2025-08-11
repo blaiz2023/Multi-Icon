@@ -1,14 +1,15 @@
 unit gossjpg;
 
 interface
+{$ifdef gui4} {$define gui3} {$define gamecore}{$endif}
 {$ifdef gui3} {$define gui2} {$define net} {$define ipsec} {$endif}
 {$ifdef gui2} {$define gui}  {$define jpeg} {$endif}
 {$ifdef gui} {$define snd} {$endif}
 {$ifdef con3} {$define con2} {$define net} {$define ipsec} {$endif}
 {$ifdef con2} {$define jpeg} {$endif}
 {$ifdef fpc} {$mode delphi}{$define laz} {$define d3laz} {$undef d3} {$else} {$define d3} {$define d3laz} {$undef laz} {$endif}
-uses gossroot {$ifdef laz}{$ifdef jpeg},windows, sysutils, classes, graphics, JcParam, JDataDst, JDataSrc, JCOMapi, JcAPIstd, JdAPIstd, FPReadJPEG, JPEGLib, JcAPImin, JdAPImin{$endif}{$endif};
-{$B-} {generate short-circuit boolean evaluation code -> stop evaluating logic as soon as value is known}
+uses gossroot {$ifdef laz}{$ifdef jpeg}, JcParam, JDataDst, JDataSrc, JCOMapi, JcAPIstd, JdAPIstd, FPReadJPEG, JPEGLib, JcAPImin, JdAPImin{$endif}{$endif};
+{$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-} { set critical compiler conditionals for proper compilation - 10aug2025 }
 //## ==========================================================================================================================================================================================================================
 //##
 //## MIT License
@@ -38,10 +39,10 @@ uses gossroot {$ifdef laz}{$ifdef jpeg},windows, sysutils, classes, graphics, Jc
 //## Source: jpeglib.h+jpegint.h
 //##
 //## ==========================================================================================================================================================================================================================
-//## Library.................. JPEG support (gossjpg.pas)
-//## Version.................. 4.00.234 (+0)
+//## Library.................. Jpeg support (gossjpg.pas)
+//## Version.................. 4.00.251 (+39)
 //## Items.................... 1
-//## Last Updated ............ 27may2025, 05may2025, 17feb2024
+//## Last Updated ............ 18jun2025, 27may2025, 05may2025, 17feb2024
 //## Lines of Code............ 1,500+
 //##
 //## main.pas ................ app code
@@ -55,11 +56,13 @@ uses gossroot {$ifdef laz}{$ifdef jpeg},windows, sysutils, classes, graphics, Jc
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
 //## gosszip.pas ............. zip support
 //## gossjpg.pas ............. jpeg support
+//## gossgame.pas ............ game support (optional)
+//## gamefiles.pas ........... internal files for game (optional)
 //##
 //## ==========================================================================================================================================================================================================================
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
-//## | jpg__*                 | family of procs   | 1.00.200  | 05may2025   | JPEG image io procs -> read and write jpeg images to/from tstr8 and tstr9 handlers
+//## | jpg__*                 | family of procs   | 1.00.212  | 16jun2025   | JPEG image io procs -> read and write jpeg images to/from tstr8 and tstr9 handlers - 05may2025
 //## ==========================================================================================================================================================================================================================
 //## Performance Note:
 //##
@@ -72,7 +75,7 @@ uses gossroot {$ifdef laz}{$ifdef jpeg},windows, sysutils, classes, graphics, Jc
 
 {$ifdef jpeg}
 function jpg____fromdata(s:pobject;d:tobject):boolean;
-function jpg____todata(s:pobject;d:tobject;dquality100:longint):boolean;
+function jpg____todata(s:pobject;d:tobject;dquality100:longint):boolean;//16jun2025
 {$endif}
 
 
@@ -101,13 +104,13 @@ try
 //init
 xname:=strlow(xname);
 
-//check -> xname must be "gossgui.*"
-if (strcopy1(xname,1,8)='gossgui.') then strdel1(xname,1,8) else exit;
+//check -> xname must be "gossjpg.*"
+if (strcopy1(xname,1,8)='gossjpg.') then strdel1(xname,1,8) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.234'
-else if (xname='date')       then result:='27may2025'
-else if (xname='name')       then result:='JPEG'
+if      (xname='ver')        then result:='4.00.251'
+else if (xname='date')       then result:='18jun2025'
+else if (xname='name')       then result:='Jpeg'
 else
    begin
    //nil
@@ -153,7 +156,7 @@ end;
 const
    jpeg_std_error:jpeg_error_mgr=( error_exit: err__JpegError; emit_message: err__EmitMessage; output_message: err__OutputMessage; format_message: err__FormatMessage; reset_error_mgr: err__ResetErrorMgr);
 
-function jpg____todata(s:pobject;d:tobject;dquality100:longint):boolean;
+function jpg____todata(s:pobject;d:tobject;dquality100:longint):boolean;//16jun2025
 label
    skipend0,skipend;
 var
@@ -247,7 +250,7 @@ else if (dbits=8) then
    begin
    c24.r:=dr8[dx];
    c24.g:=c24.r;
-   c24.b:=c24.b;
+   c24.b:=c24.r;//16jun2025
    ar24[dx]:=c24;
    end;//dx
    end;
@@ -329,7 +332,7 @@ j.quantize_colors         :=false;//no greyscale -> use 24bit always
 j.out_color_space         :=JCS_RGB;
 
 //.best speed
-j.dct_method              :=JDCT_IFAST;
+j.dct_method              :=JDCT_ISLOW;//16jun2025 - was: JDCT_IFAST;
 j.two_pass_quantize       :=false;
 j.dither_mode             :=JDITHER_NONE;//was: JDITHER_ORDERED;
 
@@ -938,7 +941,7 @@ function  jpeg_write_scanlines(var cinfo: jpeg_compress_struct; scanlines: JSAMP
 procedure jpeg_finish_compress(var cinfo: jpeg_compress_struct); external;
 
 
-function jpg____todata(s:pobject;d:tobject;dquality100:longint):boolean;
+function jpg____todata(s:pobject;d:tobject;dquality100:longint):boolean;//16jun2025
 label
    skipend0,skipend;
 var
@@ -1018,7 +1021,7 @@ else if (dbits=8) then
    begin
    c24.r:=dr8[dx];
    c24.g:=c24.r;
-   c24.b:=c24.b;
+   c24.b:=c24.r;//16jun2025
    ar24[dx]:=c24;
    end;//dx
    end;
@@ -1085,7 +1088,7 @@ j.quantize_colors         :=false;//no greyscale -> use 24bit always
 j.out_color_space         :=JCS_RGB;
 
 //.best speed
-j.dct_method              :=JDCT_IFAST;
+j.dct_method              :=JDCT_ISLOW;//16jun2025 - was: JDCT_IFAST;
 j.two_pass_quantize       :=false;
 j.dither_mode             :=JDITHER_NONE;//was: JDITHER_ORDERED;
 
