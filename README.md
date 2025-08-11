@@ -36,3 +36,5 @@ Save as a multi-resolution icon in either the standard Windows icon (.ico) forma
 <img src="images/multiicon-screenshot2.jpg">
 
 <img src="images/multiicon-screenshot3.jpg">
+
+<img src="images/multiicon-screenshot4.jpg">
