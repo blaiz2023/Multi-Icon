@@ -8,7 +8,7 @@ interface
 {$ifdef con3} {$define con2} {$define net} {$define ipsec} {$endif}
 {$ifdef con2} {$define jpeg} {$endif}
 {$ifdef fpc} {$mode delphi}{$define laz} {$define d3laz} {$undef d3} {$else} {$define d3} {$define d3laz} {$undef laz} {$endif}
-uses gossroot, gosswin;
+uses gosswin2, gossroot, gosswin;
 {$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-} { set critical compiler conditionals for proper compilation - 10aug2025 }
 //## ==========================================================================================================================================================================================================================
 //##
@@ -30,17 +30,18 @@ uses gossroot, gosswin;
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. disk/folder/file support (gossio.pas)
-//## Version.................. 4.00.5040 (+314)
-//## Items.................... 6
-//## Last Updated ............ 11aug2025, 12jun2025, 01jun2025, 28may2025, 01may2025, 11apr2025, 31mar2025, 21mar2025, 08mar2025, 20feb2025, 11jan2025, 18dec2024, 18nov2024, 15nov2024, 22aug2024, 20jul2024, 23jun2024, 30apr2024
-//## Lines of Code............ 5,400+
+//## Version.................. 4.00.5134 (+334)
+//## Items.................... 7
+//## Last Updated ............ 09nov2025, 05oct2025, 28sep2025, 18sep2025, 28aug2025, 17aug2025, 11aug2025, 12jun2025, 01jun2025, 28may2025, 01may2025, 11apr2025, 31mar2025, 21mar2025, 08mar2025, 20feb2025, 11jan2025, 18dec2024, 18nov2024, 15nov2024, 22aug2024, 20jul2024, 23jun2024, 30apr2024
+//## Lines of Code............ 5,800+
 //##
 //## main.pas ................ app code
 //## gossroot.pas ............ console/gui app startup and control
 //## gossio.pas .............. file io
 //## gossimg.pas ............. image/graphics
 //## gossnet.pas ............. network
-//## gosswin.pas ............. 32bit windows api's/xbox controller
+//## gosswin.pas ............. static Win32 api calls
+//## gosswin2.pas ............ dynamic Win32 api calls
 //## gosssnd.pas ............. sound/audio/midi/chimes
 //## gossgui.pas ............. gui management/controls
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
@@ -52,8 +53,9 @@ uses gossroot, gosswin;
 //## ==========================================================================================================================================================================================================================
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
-//## | filecache__*           | family of procs   | 1.00.152  | 29apr2024   | Cache open file handles for faster repeat file IO operations, 12apr2024: created
-//## | io__*                  | family of procs   | 1.00.3710 | 11aug2025   | Disk, folder and file procs + 64bit file support, 12jun2025, 11jun2025, 18may2025, 14may2025, 11apr2025, 20feb2025, 25jan2025, 11jan2025: fixed "io__fromfile64c()" for "!:\" files, 20dec2024, 16dec2024: io__copyfile upgraded, 18nov2024: tea3 format detection, 22aug2024: io__folderlist procs added, 19jul2024: io__filelist1/21() subfolder support added, 30apr2024: fixed io__ double ptr ref, 30apr2024: io__tofileex64() updated to flush buffer for correct nav__* filesize reporting, 17apr2024: procs renamed
+//## | filecache__*           | family of procs   | 1.00.157  | 28sep2025   | Cache open file handles for faster repeat file IO operations, 17aug2025, 29apr2024, 12apr2024: created
+//## | key__*                 | family of procs   | 1.00.022  | 26aug2025   | Key generation for security work
+//## | io__*                  | family of procs   | 1.00.3757 | 09nov2025   | Disk, folder and file procs + 64bit file support, 05oct2025, 28sep2025, 18sep2025, 28aug2025, 12jun2025, 11jun2025, 18may2025, 14may2025, 11apr2025, 20feb2025, 25jan2025, 11jan2025: fixed "io__fromfile64c()" for "!:\" files, 20dec2024, 16dec2024: io__copyfile upgraded, 18nov2024: tea3 format detection, 22aug2024: io__folderlist procs added, 19jul2024: io__filelist1/21() subfolder support added, 30apr2024: fixed io__ double ptr ref, 30apr2024: io__tofileex64() updated to flush buffer for correct nav__* filesize reporting, 17apr2024: procs renamed
 //## | nav__*                 | family of procs   | 1.00.300  | 26feb2024   | Worker procs for file/folder/navigation lists
 //## | idisk__*               | family of procs   | 1.00.132  | 15mar2025   | Internal disk support "!:\" - 20jul2024: reintegrated into Gossamer
 //## | s12__*                 | family of procs   | 1.00.045  | 08mar2025   | Read/write 12bit io streams
@@ -200,6 +202,11 @@ function app__bol(xname:string):boolean;
 function info__io(xname:string):string;//information specific to this unit of code
 
 
+//key procs --------------------------------------------------------------------
+function key__makecheckcode__v1(const xfilename:string;var xoutkey:string):boolean;//21aug2025
+function key__makecheckcode__v1b(const xfilename:string):string;//21aug2025
+
+
 //win32 folder procs -----------------------------------------------------------
 function io__findfolder(x:longint;var y:string):boolean;//17jan2007
 function io__appdata:string;//out of date
@@ -214,6 +221,8 @@ function io__winstartmenu:string;
 
 
 //disk, folder and file procs --------------------------------------------------
+function io__runwait(const xcmd,xparams:string):boolean;//24aug2025
+function io__runwait2(const xcmd,xparams:string;xwaitms:longint;xadmin:boolean;var xexitcode:longint):boolean;//24aug2025
 procedure io__createlink(const df,sf,dswitches,iconfilename:string);//10apr2019, 14NOV2010
 function io__exename:string;
 function io__ownname:string;
@@ -224,7 +233,7 @@ function io__lastext2(x:string;xifnodotusex:boolean):string;//returns last exten
 function io__remlastext(const x:string):string;//remove last extension
 function io__readfileext(const x:string;fu:boolean):string;{Date: 24-DEC-2004, Superceeds "ExtractFileExt"}
 function io__readfileext_low(const x:string):string;//30jan2022
-function io__findext(s:string;var xoutlabel,xoutext,xoutmask:string):boolean;
+function io__findext(s:string;var xoutlabel,xoutext,xoutmask:string):boolean;//09nov2025
 function io__forceext(const xfilename,xforceext:string):string;
 function io__forceext2(const xfilename,xforceext:string;xappend:boolean):string;
 function io__scandownto(const x:string;y,stopA,stopB:char;var a,b:string):boolean;
@@ -251,12 +260,18 @@ function io__asfolderNIL(const x:string):string;//enforces trailing "\" AND perm
 function io__folderaslabel(x:string):string;
 function io__isfile(const x:string):boolean;
 function io__local(const x:string):boolean;
+function io__internal(const x:string):boolean;//21aug2025
 function io__canshowfolder(const x:string):boolean;//18may2025
+function io__canshowfile(const x:string):boolean;//18sep2025
+function io__canEditWithNotepad(const x:string):boolean;//18sep2025
+function io__canEditWithPaint(const x:string):boolean;//18sep2025
+function io__canPrint(const x:string):boolean;//18sep2025
 function io__driveexists(const x:string):boolean;//true=drive has content - 01may2025, 17may2021, 16feb2016, 25feb2015, 17AUG2010
 function io__drivetype(const x:string):string;//15apr2021, 05apr2021
 function io__drivelabel(const x:string;xfancy:boolean):string;//17may2021, 05apr2021
 function io__fileexists(const x:string):boolean;//01may2025, 04apr2021, 15mar2020, 19may2019
 function io__filesize64(const x:string):comp;//24dec2023
+function io__filesize642(const xfilehandle:thandle):comp;//28sep2025
 function io__filedateb(const x:string):tdatetime;//27jan2022
 function io__filedate(const x:string;var xdate:tdatetime):boolean;//24dec2023, 27jan2022
 function io__filesize_atleast(const df:string;dsize:comp):boolean;//11aug2024
@@ -282,6 +297,7 @@ function io__fromfile64b(const x:string;xdata:pobject;var e:string;var _filesize
 function io__fromfile64d(const x:string;xdata:pobject;xappend:boolean;var e:string;var _filesize:comp;_from:comp;_size:comp;var _date:tdatetime):boolean;//31mar2025, 06feb2024, 24dec2023, 20oct2006
 function io__fromfile64c(const x:string;xdata:pobject;xappend:boolean;var e:string;var _filesize,_from:comp;_size:comp;var _date:tdatetime):boolean;//31mar2025, 11jan2025, 06feb2024, 24dec2023, 20oct2006
 function io__fromfilestrb(const x:string;var e:string):string;//30mar2022
+function io__fromfilestr2(const x:string):string;//28aug2025
 function io__fromfilestr(const x:string;var xdata,e:string):boolean;
 function io__drivelist:tdrivelist;
 function io__fromfiletime(x:tfiletime):tdatetime;
@@ -289,7 +305,7 @@ function io__folderexists(const x:string):boolean;//01may2025, 15mar2020, 14dec2
 function io__deletefolder(x:string):boolean;//13feb2024
 function io__makefolder(x:string):boolean;//01may2025, 15mar2020, 19may2019
 function io__makefolder2(const x:string):string;//01may2025
-function io__makefolderchain(x:string):boolean;//11aug2025
+function io__makefolderchain(x:string):boolean;//17aug2025, 11aug2025
 //.simple file list support - 19jul2024, 31dec2023, 06oct2022
 function io__filelist(xoutlist:tdynamicstring;xfullfilenames:boolean;xfolder,xmasklist,xemasklist:string):boolean;//06oct2022
 function io__filelist1(xoutlist:tdynamicstring;xfullfilenames,xsubfolders:boolean;xfolder,xmasklist,xemasklist:string):boolean;//06oct2022
@@ -307,7 +323,7 @@ function io__findimagewh(xdata:pobject;var xformat:string;var xw,xh:longint):boo
 function io__anyformatb(xdata:pobject):string;
 function io__anyformat2b(xdata:pobject;xfrompos:longint):string;
 function io__anyformat(xdata:pobject;var xformat:string):boolean;//returns EXT of any known format, image, sound, frame, etc - 14may2025, 20dec2024, 18nov2024, 30jan2021
-function io__anyformat2(xdata:pobject;xfrompos:longint;var xformat:string):boolean;//returns EXT of any known format, image, sound, frame, etc - 11jun2025, 14may2025, 20dec2024, 18nov2024, 30jan2021
+function io__anyformat2(xdata:pobject;xfrompos:longint;var xformat:string):boolean;//returns EXT of any known format, image, sound, frame, etc - 24aug2025, 11jun2025, 14may2025, 20dec2024, 18nov2024, 30jan2021
 function io__anyformata(const xdata:array of byte):string;//19feb2025, 25jan2025
 
 
@@ -318,6 +334,7 @@ function filecache__recok(x:pfilecache):boolean;
 procedure filecache__initrec(x:pfilecache;xslot:longint);//used internally by system
 function filecache__idletime:comp;
 function filecache__enabled:boolean;
+procedure filecache__setenable(const xenable:boolean);//28sep2025
 function filecache__limit:longint;
 function filecache__safefilename(const x:string):boolean;
 //.find
@@ -335,7 +352,7 @@ function filecache__remfile(const x:string):boolean;
 function filecache__openfile_anyORread(const x:string;var v:pfilecache;var vmustclose:boolean;var e:string):boolean;//for info purposes such as filesize and filedate, not for reading/writing file content
 function filecache__openfile_read(const x:string;var v:pfilecache;var e:string):boolean;
 function filecache__openfile_write(const x:string;var v:pfilecache;var e:string):boolean;
-function filecache__openfile_write2(const x:string;xremfile_first:boolean;var xfilecreated:boolean;var v:pfilecache;var e:string):boolean;
+function filecache__openfile_write2(const x:string;xremfile_first:boolean;var xfilecreated:boolean;var v:pfilecache;var e:string):boolean;//17aug2025
 //.management
 procedure filecache__managementevent;
 
@@ -461,8 +478,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,7)='gossio.') then strdel1(xname,1,7) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.5040'
-else if (xname='date')       then result:='11aug2025'
+if      (xname='ver')        then result:='4.00.5134'
+else if (xname='date')       then result:='09nov2025'
 else if (xname='name')       then result:='IO'
 else
    begin
@@ -733,6 +750,108 @@ except;end;
 end;
 
 
+//key procs --------------------------------------------------------------------
+
+function key__makecheckcode__v1b(const xfilename:string):string;//21aug2025
+begin
+key__makecheckcode__v1(xfilename,result);
+end;
+
+function key__makecheckcode__v1(const xfilename:string;var xoutkey:string):boolean;//21aug2025
+const
+   xchunksize=5000000;//5Mb
+label
+   redo,skipend;
+var
+   xdata:tstr8;
+   xref:array[0..3] of tseedcrc32;
+   v4:tint4;
+   v,p:longint;
+   dadd,spos,xfilesize:comp;
+   xdate:tdatetime;
+   xeven:boolean;
+   str1,e:string;
+begin
+//defaults
+result   :=false;
+xoutkey  :='';
+xdata    :=nil;
+spos     :=0;
+dadd     :=0;
+xeven    :=true;
+
+//check
+if not io__fileexists(xfilename) then exit;
+
+try
+//init
+xdata:=str__new8;
+crc32__createseed(xref[0],0);
+crc32__createseed(xref[1],987234211);
+crc32__createseed(xref[2],1340350021);
+
+//.file extension as seed
+str1:=strcopy1(io__readfileext_low(xfilename)+'____',1,4);
+
+for p:=0 to 3 do v4.bytes[p]:=strbyte0(str1,p);
+
+crc32__createseed(xref[3],v4.val);
+
+//get
+redo:
+
+//read chunk
+if not io__fromfile64b(xfilename,@xdata,e,xfilesize,spos,xchunksize,xdate) then goto skipend;
+
+//make keys
+for p:=0 to high(xref) do crc32__encode(xref[p],xdata);
+
+//custom key
+for p:=0 to (xdata.len-1) do
+begin
+
+v      :=xdata.pbytes[p];
+xeven  :=not xeven;
+
+case v of
+2    :if xeven then dadd:=dadd+(4*v)+3       else dadd:=dadd+v+1;
+9    :if xeven then dadd:=dadd+8             else dadd:=dadd+3003;
+17   :if xeven then dadd:=dadd+(19*v)-7      else dadd:=dadd+(v*25)-2;
+53   :dadd:=dadd+1081;
+54   :dadd:=dadd+597;
+55   :dadd:=dadd+327;
+56   :dadd:=dadd+411;
+122  :if xeven then dadd:=dadd+(7*(v+1))-2   else dadd:=dadd+((v+3)*8)-1;
+255  :if xeven then dadd:=dadd+17            else dadd:=dadd+19;
+else  dadd:=dadd+v;
+end;//case
+
+end;//p
+
+//loop
+if ((spos+1)<xfilesize) then goto redo;
+
+//get -> "K1" + filesize(16/filelengh)+custom(16/custom)+crc(8/std.seed)+crc(8/custom.seed)+crc(8/custom.seed)+crc(8/ext.as.seed) = 66 bytes
+xoutkey:=
+ 'K1'+
+ int8__hex16(xfilesize)+//16
+ int8__hex16(dadd)+     //16
+ int4__hex8(xref[0].xresult)+//8
+ int4__hex8(xref[1].xresult)+//8
+ int4__hex8(xref[2].xresult)+//8
+ int4__hex8(xref[3].xresult);//8
+
+//successful
+result:=true;
+skipend:
+except;end;
+
+//free
+str__free(@xdata);
+
+end;
+
+
 //io procs ---------------------------------------------------------------------
 function io__findfolder(x:longint;var y:string):boolean;//17jan2007
 var
@@ -870,42 +989,53 @@ end;
 
 function io__winstartup:string;
 begin
-result:='';try;io__findfolder(CSIDL_STARTUP,result);except;end;
+io__findfolder(CSIDL_STARTUP,result);
 end;
 
 function io__winprograms:string;//start button > programs > - 11NOV2010
 begin
-result:='';try;io__findfolder(CSIDL_PROGRAMS,result);except;end;
+io__findfolder(CSIDL_PROGRAMS,result);
 end;
 
 function io__winstartmenu:string;
 begin
-result:='';try;io__findfolder(CSIDL_STARTMENU,result);except;end;
+io__findfolder(CSIDL_STARTMENU,result);
 end;
 
-function io__fileexists(const x:string):boolean;//01may2025, 04apr2021, 15mar2020, 19may2019
+function io__fileexists(const x:string):boolean;//27aug2025, 01may2025, 04apr2021, 15mar2020, 19may2019
+
    function xfileexists:boolean;
    var
       h:thandle;
       f:TWin32FindData;
    begin
+
    //defaults
    result:=false;
 
+   //init
+   low__cls(@f,sizeof(f));//27aug2025
+
    //get
    h:=win____FindFirstFile(pchar(x),f);
+
    if (h<>INVALID_HANDLE_VALUE) then
       begin
+
       win____findclose(h);
       //set
       result:=((f.dwfileattributes and FILE_ATTRIBUTE_DIRECTORY)=0);
+
       end;
+
    end;
 begin//soft check via low__driveexists
+
 case idisk__havescope(x) of
 true:result:=idisk__fileexists(x)
 else result:=(x<>'') and io__local(x) and io__driveexists(x) and xfileexists;
 end;//case
+
 end;
 
 function io__filesize64(const x:string):comp;//24dec2023
@@ -926,6 +1056,16 @@ if filecache__openfile_anyORread(x,v,vmustclose,e) then
    except;end;
    if vmustclose then filecache__closefile(v);
    end;
+end;
+
+function io__filesize642(const xfilehandle:thandle):comp;//28sep2025
+begin
+
+case (xfilehandle<>0) of
+true:tcmp8(result).ints[0]:=win____getfilesize(xfilehandle,@tcmp8(result).ints[1]);
+else result:=-1;
+end;//case
+
 end;
 
 function io__filedateb(const x:string):tdatetime;//27jan2022
@@ -1296,6 +1436,13 @@ begin
 result:='';try;io__fromfilestr(x,result,e);except;end;
 end;
 
+function io__fromfilestr2(const x:string):string;//28aug2025
+var
+   e:string;
+begin
+result:='';try;io__fromfilestr(x,result,e);except;end;
+end;
+
 function io__fromfilestr(const x:string;var xdata,e:string):boolean;
 var
    a:tstr8;
@@ -1366,6 +1513,7 @@ var
    c.ints[0]:=win____getfilesize(v.filehandle,@c.ints[1]);
    result:=c.val;
    end;
+
 begin
 //defaults
 result:=false;
@@ -1396,12 +1544,14 @@ else
 //internal
 if idisk__havescope(x) then
    begin
+
    //find
    if not idisk__find(x,false,int1) then
       begin
       e:=gecFilenotfound;
       goto skipend;
       end;
+
    //get
    if zzok(intdisk_data[int1],7023) then
       begin
@@ -1413,9 +1563,11 @@ if idisk__havescope(x) then
          end;
       _from:=frcmax64( add64(_from,restrict32(_size)) ,_filesize);//11jan2025
       end;
+
    //succesful
    result:=true;
    goto skipend;
+
    end;
 
 //open
@@ -1468,27 +1620,37 @@ if not str__setlen(xdata,xdatalen+_size32) then
    goto skipend;
    end;
 
+
 i:=0;
 
 //.write
 while true do
 begin
+
 //.get
 win____readfile(v.filehandle,a,amax+1,ac,nil);
+
 //.check
 if (ac=0) then break;
+
 //.fill
 if (xdata^ is tstr8) then
    begin
+
    for p:=0 to frcmax32(ac-1,_size32-i-1) do//tested and passed - 17may2021
    begin
+
    inc(i);
    (xdata^ as tstr8).pbytes[xdatalen+i-1]:=a[p];
+
    end;//p
+
    end
 else if (xdata^ is tstr9) then
    begin
+
    inc(i,(xdata^ as tstr9).fastwrite(a,frcmax32(ac,_size32-i),xdatalen+i));
+
    end;
 
 //.quit
@@ -1497,21 +1659,27 @@ end;//loop
 
 //successful
 _from:=add64(_from,i);
+
 if (_filesize=_size) and (_from=0) then result:=(i=_size)//only for small files, BIG files can't always fit in RAM
 else
    begin
    if (i<>_size32) then str__setlen(xdata,xdatalen+i);
    result:=(i>=1);
    end;
+
 skipend:
 except;end;
 try
+
 //close cache record
 if vok then filecache__closefile(v);
+
 //reset buffer on failure
 if (not result) and (not xappend) then str__clear(xdata);
+
 //release buffer and optionally destroy it
 str__unlockautofree(xdata);
+
 except;end;
 end;
 
@@ -1579,7 +1747,7 @@ if io__local(x) and io__driveexists(x) then
 except;end;
 end;
 
-function io__makefolderchain(x:string):boolean;//11aug2025
+function io__makefolderchain(x:string):boolean;//17aug2025, 11aug2025
 var
    p:longint;
    xfailed:boolean;
@@ -1592,7 +1760,10 @@ try
 if (x<>'') then x:=io__asfolder(x) else exit;
 
 //get
-if io__local(x) and io__driveexists(x) then
+result:=io__local(x) and io__folderexists(x);
+
+//create all sub-folders from root-folder up - 17aug2025
+if (not result) and io__local(x) and io__driveexists(x) then
    begin
 
    //init
@@ -1899,6 +2070,58 @@ for p:=0 to 25 do if (p in xdrivelist) then result[p]:=true;
 except;end;
 end;
 
+function io__runwait(const xcmd,xparams:string):boolean;//24aug2025
+var
+   int1:longint;
+begin
+result:=io__runwait2(xcmd,xparams,0,false,int1);
+end;
+
+function io__runwait2(const xcmd,xparams:string;xwaitms:longint;xadmin:boolean;var xexitcode:longint):boolean;//24aug2025
+var
+   v:tshellexecuteinfo;
+begin
+
+//defaults
+result    :=false;
+xexitcode :=1;//error
+
+try
+//init
+low__cls(@v,sizeof(v));
+
+//range
+if (xwaitms<=0) then xwaitms:=60*1000;//1 minute is default
+
+//get
+v.cbSize       :=sizeof(v);
+
+//SEE_MASK_NOCLOSEPROCESS (0x00000040) = 64 = get handle of external process so we can wait for it to exit -> we must also close the handle when done
+//SEE_MASK_NOASYNC (0x00000100)=256 if no message pump so shellexecuteex can finish the DDE conversation for us
+//SEE_MASK_FLAG_NO_UI (0x00000400)=1024
+v.fmask        :=1024 + 256 + 64;
+v.lpFile       :=pchar(xcmd);
+
+if xadmin        then v.lpVerb       :=pchar('runas');
+if (xparams<>'') then v.lpParameters :=pchar(xparams);
+
+//run the external app hidden
+if win____ShellExecuteEx(@v) and (v.hProcess>=0) then
+   begin
+
+   //wait for it to finish
+   win____WaitForSingleObject(v.hProcess, xwaitms);
+   win____GetExitCodeProcess(v.hProcess,xexitcode);
+   win____closehandle(v.hProcess);
+
+   //successful
+   result:=true;
+
+   end;
+
+except;end;
+end;
+
 procedure io__createlink(const df,sf,dswitches,iconfilename:string);//10apr2019, 14NOV2010
 var//Note: df=> filename to save link as, sf=filename we are linking to
    //ShlObj, ActiveX, ComObj
@@ -2096,7 +2319,7 @@ end;//p
 except;end;
 end;
 
-function io__findext(s:string;var xoutlabel,xoutext,xoutmask:string):boolean;
+function io__findext(s:string;var xoutlabel,xoutext,xoutmask:string):boolean;//09nov2025
 //Note: s is "txt" or "bat" or "bmp" or "tea" etc
    procedure xcap(const x:string);
    var
@@ -2160,11 +2383,13 @@ else if (s=feppm) then xcap('Portable Pixelmap')
 else if (s=fepgm) then xcap('Portable Greymap')
 else if (s=fepbm) then xcap('Portable Bitmap')
 else if (s=fepnm) then xcap('PNM Picture')
-else if (s=fexbm) then xcap('XBM Picture')
+else if (s=fexbm) then xcap('X Bitmap')//18sep2025
 else if (s=fejpg) then xcap('JPEG Picture')
 else if (s=fejif) then xcap('JIF Picture')
 else if (s=fejpeg) then xcap('JPEG Picture')
 else if (s=feimg32) then xcap('Image 32bit')
+else if (s=fepic8) then xcap('Game Sprite')//16sep2025
+else if (s=fesan) then xcap('Simple Animation')//16sep2025
 else if (s=fetj32) then xcap('Transparent Jpeg 32bit')
 else if (s=fepng) then xcap('Portable Network Graphic')
 else if (s=feico) then xcap('Icon')//15feb2022
@@ -2201,7 +2426,7 @@ else if (s=febcs) then xcap('Blaiz Color Scheme')
 else if (s=fezip) then xcap('ZIP Archive')//10feb2023
 else if (s=feexe) then xcap('Application')//14nov2023
 else if (s=fepas) then xcap('Pascal Unit')//23jul2024
-else if (s=fedpr) then xcap('Delphi Project')//17mar2025
+else if (s=fedpr) then xcap('Borland Delphi Project')//09nov2025, 17mar2025
 else if (s=fec3)  then xcap('Claude 3 Code')//20aug2024
 else if (s=feref3)then xcap('Claude 3 Ref')//20aug2024
 else if (s=fenupkg)then xcap('Chocolatey Package')//31mar2025
@@ -2719,9 +2944,43 @@ begin
 result:=(strcopy1(x,1,1)<>'@');
 end;
 
+function io__internal(const x:string):boolean;//21aug2025
+begin
+result:=(strcopy1(x,1,1)='!');
+end;
+
 function io__canshowfolder(const x:string):boolean;//18may2025
 begin
-result:=(x<>'') and io__local(x);
+result:=(x<>'') and io__local(x) and (not io__internal(x));
+end;
+
+function io__canshowfile(const x:string):boolean;//18sep2025
+begin
+result:=(x<>'') and io__local(x) and (not io__internal(x));
+end;
+
+function io__canEditWithNotepad(const x:string):boolean;//18sep2025
+begin
+result:=io__canshowfile(x);
+end;
+
+function io__canEditWithPaint(const x:string):boolean;//18sep2025
+begin
+result:=io__canshowfile(x) and filter__matchlist( io__readfileext_low(x), 'bmp;dib;ico;gif;jpg;jpeg;jfif;jpe;png;tif;tiff;heic;hif;' );
+end;
+
+function io__canPrint(const x:string):boolean;//18sep2025
+begin
+
+result:=io__canshowfile(x) and
+ (
+
+ io__canEditWithPaint(x) or
+ filter__matchlist( io__readfileext_low(x), 'ini;xml;bat;log;txt;doc;docx;htm;html;pdf;' )
+
+ )
+ and printer__have;//requires a printer to be installed
+
 end;
 
 function io__driveexists(const x:string):boolean;//true=drive has content - 01may2025, 17may2021, 16feb2016, 25feb2015, 17AUG2010
@@ -2933,7 +3192,7 @@ else
       c.ints[1]:=xrec.finddata.nFileSizeHigh;
       xsize    :=c.val;
 
-      if (((xsize>=xminsize) and (xsize<=xmaxsize)) or low__matchmasklist(xrec.name,xminmax_emasklist)) and ( low__matchmasklist(xrec.name,xmasklist) and ((xemasklist='') or (not low__matchmasklist(xrec.name,xemasklist))) ) then
+      if (((xsize>=xminsize) and (xsize<=xmaxsize)) or filter__matchlist(xrec.name,xminmax_emasklist)) and ( filter__matchlist(xrec.name,xmasklist) and ((xemasklist='') or (not filter__matchlist(xrec.name,xemasklist))) ) then
          begin
          //at limit -> stop
          xtotalsize:=add64(xtotalsize,xsize);
@@ -3048,7 +3307,7 @@ else if io__faISfolder(xrec.attr) then
 else
    begin
    //.files
-   if xfiles and ( low__matchmasklist(xrec.name,xmasklist) and ((xemasklist='') or (not low__matchmasklist(xrec.name,xemasklist))) ) then
+   if xfiles and ( filter__matchlist(xrec.name,xmasklist) and ((xemasklist='') or (not filter__matchlist(xrec.name,xemasklist))) ) then
       begin
       //64bit size support - 31dec2023
       c.ints[0]:=xrec.finddata.nFileSizeLow;
@@ -3144,7 +3403,7 @@ else if io__faISfolder(xrec.attr) then
       xsubfolderlist.value[xsubfolderlist.count]:=xrec.name+'\';
       end;
 
-   if low__matchmasklist(xrec.name,xmasklist) and ((xemasklist='') or (not low__matchmasklist(xrec.name,xemasklist))) then
+   if filter__matchlist(xrec.name,xmasklist) and ((xemasklist='') or (not filter__matchlist(xrec.name,xemasklist))) then
       begin
       //add
       if xfullfoldernames then  xoutlist.value[xoutlist.count]:=xscanfolder+xrec.name+'\'
@@ -3320,9 +3579,11 @@ begin
 result:=io__anyformat2(xdata,0,xformat);
 end;
 
-function io__anyformat2(xdata:pobject;xfrompos:longint;var xformat:string):boolean;//returns EXT of any known format, image, sound, frame, etc - 11jun2025, 14may2025, 20dec2024, 18nov2024, 30jan2021
+function io__anyformat2(xdata:pobject;xfrompos:longint;var xformat:string):boolean;//returns EXT of any known format, image, sound, frame, etc - 05oct2025, 24aug2025, 11jun2025, 14may2025, 20dec2024, 18nov2024, 30jan2021
 label
    skipend;
+var
+   xdatalen:longint;
 
    function asame3(xfrom:longint;const x:array of byte;xcasesensitive:boolean):boolean;//20jul2024
    begin
@@ -3376,6 +3637,42 @@ label
    //yes
    result:=true;
    end;
+
+   function xfindval(xfrom,xsearchLen:longint;xfindVal:byte):boolean;
+   var
+      p:longint;
+   begin
+
+   //defaults
+   result:=false;
+
+   //find
+   for p:=xfrom to frcmax32(xfrom+xsearchlen-1,xdatalen-1) do if (xfindVal=str__bytes0(xdata,p)) then
+      begin
+
+      result:=true;
+      break;
+
+      end;//p
+
+   end;
+
+   function xtep1:boolean;//orginal TEP format: "[T1..T6]...[~]...[data pixels]"
+   begin
+
+   result:=
+   (
+   asame3(0,[uuT,nn1],false) or
+   asame3(0,[uuT,nn2],false) or
+   asame3(0,[uuT,nn3],false) or
+   asame3(0,[uuT,nn4],false) or
+   asame3(0,[uuT,nn5],false) or
+   asame3(0,[uuT,nn6],false)
+   )
+   and xfindval(0,300,ssSquiggle);
+
+   end;
+
 begin
 //defaults
 result:=false;
@@ -3384,7 +3681,10 @@ xformat:='';
 try
 //check
 if not str__lock(xdata) then goto skipend;
-if (str__len(xdata)<=0) then goto skipend;
+
+xdatalen:=str__len(xdata);//05oct2025
+
+if (xdatalen<=0) then goto skipend;
 
 //images -----------------------------------------------------------------------
 //.bmp
@@ -3418,6 +3718,8 @@ else if asame3(0,[uuR,uuI,uuF,uuF],false) and
         asame3(8,[uuA,uuC,uuO,uuN],false)                               then xformat:='ANI'//RIFF -> ANI (animated cursor)
 //.san
 else if asame3(0,[uuT,uuP,uuF,nn0, 4 ,uuT,uuS,uuA,uuN],true)            then xformat:='SAN'
+//.pic8
+else if asame3(0,[uuP,uuI,uuC,nn8],false)                               then xformat:='PIC8'//16sep2025
 //.omi
 else if asame3(0,[uuO,uuM,uuI],false)                                   then xformat:='OMI'
 //.gif
@@ -3435,6 +3737,8 @@ else if asame3(0,[uuP,nn3],false) or asame3(0,[uuP,nn6],false)          then xfo
 //.xbm
 else if asame3(0,[ssHash,uuD,uuE,uuF,uuI,uuN,uuE],false)                then xformat:='XBM'//#DEFINE
 //.tep
+else if xtep1                                                           then xformat:='TEP'//original v1 - 05sep2025
+
 else if asame3(0,[uuT,uuE],false) and ( asame3(2,[nn1],true) or
         asame3(2,[nn2],true) or asame3(2,[nn3],true) or
         asame3(2,[nn4],true) or asame3(2,[nn5],true) or
@@ -3494,8 +3798,13 @@ else if asame3(0,[uuI,uuD,nn3,3],true) or//ID3+#3
         asame3(0,[255,251,226,68],true) or//#255#251#226#68
         asame3(0,[255,251,178,4],true) or//#255#251#178#4 or #255#251#144#68
         asame3(0,[255,251,144,68],true)                                 then xformat:='MP3'
-//.wma
-else if asame3(0,[48,38,178,117],true)                                  then xformat:='WMA'//#48#38#178#117
+
+//Note: Magic number is for asf/wma/wmv data container and not the actual content format which can be audio or video
+//.wma -> "30 26 B2 75 8E 66 CF 11" -> sourced from "https://en.wikipedia.org/wiki/List_of_file_signatures" - 24aug2025
+else if asame3(0,[48,38,178,117,142,102,207,17],true)                   then xformat:='WMA'
+//.wma -> "A6 D9 00 AA 00 62 CE 6C"
+else if asame3(0,[166,217,0,170,0,98,206,108],true)                     then xformat:='WMA'
+
 //.pcs - custom
 else if asame3(0,[uuP,uuC,uuS,nn1,ssHash],false)                        then xformat:='PCS'//pc speaker sound
 //.ssd - custom
@@ -3504,9 +3813,17 @@ else if asame3(0,[uuS,uuS,uuD,nn1,ssHash],false)                        then xfo
 //encodings --------------------------------------------------------------------
 //.b64
 else if asame3(0,[uuB,nn6,nn4,ssColon],false)                           then xformat:='B64'//B64:
+
 //.zip
 else if asame3(0,[120,218],true) or asame3(0,[120,1],true) or
-        asame3(0,[120,94],true)  or asame3(0,[120,156],true)            then xformat:='ZIP'
+        asame3(0,[120,94],true)  or asame3(0,[120,156],true) or
+        //pk zip format -> sourced from "https://en.wikipedia.org/wiki/List_of_file_signatures" - 24aug2025
+        asame3(0,[80,75,3,4],true) or asame3(0,[80,75,5,6],true) or
+        asame3(0,[80,75,7,8],true)                                      then xformat:='ZIP'//24aug2025
+
+//.7z -> "37 7A BC AF 27 1C" -> sourced from "https://en.wikipedia.org/wiki/List_of_file_signatures" - 24aug2025
+else if asame3(0,[55,122,188,175,39,28],true)                           then xformat:='7Z'
+
 //.ioc
 else if asame3(0,[uuC,ssExclaim,nn1],false)                             then xformat:='IOC'//compressed data header
 //.ior
@@ -3586,6 +3903,11 @@ end;
 function filecache__enabled:boolean;
 begin
 result:=(system_filecache_limit>=21);
+end;
+
+procedure filecache__setenable(const xenable:boolean);//28sep2025
+begin
+system_filecache_limit:=frcmax32(low__aorb(20,high(system_filecache_slot)+1,xenable),high(system_filecache_slot)+1);
 end;
 
 function filecache__limit:longint;
@@ -3813,6 +4135,7 @@ var
    if (h<=0) then h:=win____createfile(pchar(x),generic_read,file_share_read,nil,open_existing,file_attribute_normal,0);//fallback proc for readonly media -> in case it fails to open - 13apr2024
    result:=(h>=1);//13apr2024: updated
    end;
+
 begin
 //defaults
 result:=false;
@@ -3887,7 +4210,7 @@ begin
 result:=filecache__openfile_write2(x,false,bol1,v,e);
 end;
 
-function filecache__openfile_write2(const x:string;xremfile_first:boolean;var xfilecreated:boolean;var v:pfilecache;var e:string):boolean;
+function filecache__openfile_write2(const x:string;xremfile_first:boolean;var xfilecreated:boolean;var v:pfilecache;var e:string):boolean;//17aug2025
 label
    skipend;
 var
@@ -3902,22 +4225,34 @@ var
    case io__fileexists(x) of
    true:h:=win____createfile(pchar(x),generic_read or generic_write,file_share_read,nil,open_existing,file_attribute_normal,0);
    else begin
-      case io__makefolder(io__extractfilepath(x)) of//create folder
+
+      //was: case io__makefolder(io__extractfilepath(x)) of//create folder
+      case io__makefolderchain(io__extractfilepath(x)) of//make folder chain - 17aug2025
       true:begin//create file
+
          h2:=win____createfile(pchar(x),generic_read or generic_write,0,nil,create_always,file_attribute_normal,0);
+
+         //.fallback mode
          if (h2>=1) then
             begin
+
             win____closehandle(h2);
 //            h:=win____createfile(pchar(x),generic_read or generic_write,file_share_read,nil,open_existing,file_attribute_normal,0);
             h:=win____createfile(pchar(x),generic_read or generic_write,file_share_read,nil,open_existing,file_attribute_normal,0);
             if (h>=1) then xfilecreated:=true;
+
             end;
+
          end;
+
       else begin
+
          h:=0;
          e:=gecPathnotfound;
+
          end;
       end;//case
+
       end;
    end;//case
    //set
@@ -4398,7 +4733,7 @@ if idisk__havescope(xfolder) then
          if not nav__add2(x,nltFolder,low__foldertep2(xownerid,xoutname),xoutsize,xyear,xmonth,xday,xhr,xmin,xsec,xoutnameonly,'') then goto skipend;
          end
       //file
-      else if xfiles and xoutfile and ( low__matchmasklist(xoutnameonly,xmasklist) and ((xemasklist='') or (not low__matchmasklist(xoutnameonly,xemasklist))) ) then
+      else if xfiles and xoutfile and ( filter__matchlist(xoutnameonly,xmasklist) and ((xemasklist='') or (not filter__matchlist(xoutnameonly,xemasklist))) ) then
          begin
          xfinddate2(xoutdate);
          if not nav__add2(x,nltFile,tepext(xoutnameonly),xoutsize,xyear,xmonth,xday,xhr,xmin,xsec,xoutnameonly,'') then goto skipend;
@@ -4440,7 +4775,7 @@ else if io__faISfolder(xrec.attr) then
 //.add file --------------------------------------------------------------------
 else
    begin
-   if xfiles and xfindsize and (((xsize>=xminsize) and (xsize<=xmaxsize)) or low__matchmasklist(xrec.name,xminmax_emasklist)) and ( low__matchmasklist(xrec.name,xmasklist) and ((xemasklist='') or (not low__matchmasklist(xrec.name,xemasklist))) ) then
+   if xfiles and xfindsize and (((xsize>=xminsize) and (xsize<=xmaxsize)) or filter__matchlist(xrec.name,xminmax_emasklist)) and ( filter__matchlist(xrec.name,xmasklist) and ((xemasklist='') or (not filter__matchlist(xrec.name,xemasklist))) ) then
       begin
       //init
       xfindsize;

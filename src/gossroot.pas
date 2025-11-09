@@ -8,7 +8,7 @@ interface
 {$ifdef con3} {$define con2} {$define net} {$define ipsec} {$endif}
 {$ifdef con2} {$define jpeg} {$endif}
 {$ifdef fpc} {$mode delphi}{$define laz} {$define d3laz} {$undef d3} {$else} {$define d3} {$define d3laz} {$undef laz} {$endif}
-uses {$ifdef laz}classes,{$endif} gosswin;
+uses {$ifdef laz}classes,{$endif} gosswin2, gosswin;
 {$ifdef d3laz} const stroffset=1; {$else} const stroffset=0; {$endif}  {0 or 1 based string index handling}
 {$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-} { set critical compiler conditionals for proper compilation - 10aug2025 }
 //## ==========================================================================================================================================================================================================================
@@ -31,17 +31,18 @@ uses {$ifdef laz}classes,{$endif} gosswin;
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. root (gossroot.pas)
-//## Version.................. 4.00.5316 (+380)
-//## Items.................... 41
-//## Last Updated ............ 10aug2025, 09aug2025, 29jul2025, 19jul2025, 15jul2025, 07jul2025, 03jul2025, 19jun2025, 11jun2025, 28may2025, 26apr2025, 11apr2025, 31mar2025, 21mar2025, 08mar2025, 20feb2025, 29jan2025, 11jan2025, 17dec2024, 06dec2024, 27nov2024, 15nov2024, 11nov2024, 01nov2024, 31oct2024, 12oct2024, 24aug2024: images extensions fix, 26jul2024: str__write, 20jul2024: zip_* procs updated, 18jun2024: GUI support added, 02may2024: low__ref256/U, 28apr2024: low__uptime(), 17apr2024
-//## Lines of Code............ 28,600+
+//## Version.................. 4.00.6386 (+498)
+//## Items.................... 49
+//## Last Updated ............ 06nov2025, 02nov2025, 24oct2025, 10oct2025, 08oct2025, 03oct2025, 29sep2025, 26sep2025, 18sep2025, 14sep2025, 13sep2025, 07sep2025, 10aug2025, 09aug2025, 29jul2025, 19jul2025, 15jul2025, 07jul2025, 03jul2025, 19jun2025, 11jun2025, 28may2025, 26apr2025, 11apr2025, 31mar2025, 21mar2025, 08mar2025, 20feb2025, 29jan2025, 11jan2025, 17dec2024, 06dec2024, 27nov2024, 15nov2024, 11nov2024, 01nov2024, 31oct2024, 12oct2024, 24aug2024: images extensions fix, 26jul2024: str__write, 20jul2024: zip_* procs updated, 18jun2024: GUI support added, 02may2024: low__ref256/U, 28apr2024: low__uptime(), 17apr2024
+//## Lines of Code............ 31,200+
 //##
 //## main.pas ................ app code
 //## gossroot.pas ............ console/gui app startup and control
 //## gossio.pas .............. file io
 //## gossimg.pas ............. image/graphics
 //## gossnet.pas ............. network
-//## gosswin.pas ............. 32bit windows api's/xbox controller
+//## gosswin.pas ............. static Win32 api calls
+//## gosswin2.pas ............ dynamic Win32 api calls
 //## gosssnd.pas ............. sound/audio/midi/chimes
 //## gossgui.pas ............. gui management/controls
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
@@ -53,27 +54,35 @@ uses {$ifdef laz}classes,{$endif} gosswin;
 //## ==========================================================================================================================================================================================================================
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
-//## | app__*                 | family of procs   | 1.00.435  | 08aug2025   | App related procs - 15jul2025, 19jun2025, 18feb2025, 29jan2025, 27nov2024
+//## | app__*                 | family of procs   | 1.00.445  | 23oct2025   | App related procs - 28sep2025, 07sep2025, 19aug2025, 15jul2025, 19jun2025, 18feb2025, 29jan2025, 27nov2024
+//## | dialog__*              | family of procs   | 1.00.070  | 10oct2025   | MS Dialogs
 //## | printer__*             | family of procs   | 1.00.050  | 26apr2025   | Printer related procs
 //## | font__*                | family of procs   | 1.00.070  | 26apr2025   | Font related procs
 //## | mail__*                | family of procs   | 1.00.172  | 07apr2025   | Mail related procs (email) - 21nov2024
 //## | new__*                 | family of procs   | 1.00.010  | 30apr2024   | Creation procs -> create objects using less source code
-//## | track__*               | family of procs   | 1.00.005  | 17apr2024   | Type instance tracking
-//## | monitors__*            | family of procs   | 1.00.430  | 18feb2025   | Multi-monitor support - 06jan2025, 05dec2024
-//## | low__*                 | low level procs   | 1.00.122  | 25jul2025   | Support procs - 01apr2025, 06jan2025, 01may2024
+//## | track__*               | family of procs   | 1.00.023  | 07sep2025   | Type instance tracking - 28aug2025, 17apr2024
+//## | monitors__*            | family of procs   | 1.00.432  | 26sep2025   | Multi-monitor support - 18feb2025, 06jan2025, 05dec2024
+//## | low__*                 | low level procs   | 1.00.179  | 29sep2025   | Support procs - 03sep2025, 25jul2025, 01apr2025, 06jan2025, 01may2024
 //## | low__b64*              | family of procs   | 1.00.030  | 17apr2024   | Base64 encoding/decoding
 //## | float__*, int__*       | family of procs   | 1.00.052  | 12dec2024   | Float and integer string-to-number and number-to-string conversion routines - 12dec2024: float__tostr_divby(),  01nov2024
 //## | block__*               | family of procs   | 1.00.095  | 17apr2024   | Block based memory management procs
-//## | str__*                 | family of procs   | 1.00.234  | 04may2025   | Procs for working with both tstr8 and tstr9 objects, 17apr2025, 16mar2025, 22nov2024, 11aug2024: str__pbytes0 and str__setpbytes0, 25jul2024: str__tob64/fromb64, 17apr2024
-//## | mem__*                 | family of procs   | 1.00.010  | 17apr2024   | Linear memory management procs
+//## | str__*                 | family of procs   | 1.00.240  | 30aug2025   | Procs for working with both tstr8 and tstr9 objects, 04may2025, 17apr2025, 16mar2025, 22nov2024, 11aug2024: str__pbytes0 and str__setpbytes0, 25jul2024: str__tob64/fromb64, 17apr2024
+//## | mem__*                 | family of procs   | 1.00.052  | 01sep2025   | Heap based management procs - 27aug2025, 27aug2025, 17apr2024
 //## | utf8__*                | family of procs   | 1.00.115  | 21apr2025   | UTF-8 decoding support, 16mar2025, 15apr2024: created
 //## | mundo__*               | family of procs   | 1.00.075  | 28jun2024   | Data stream based multi-undo redo/undo slot tracking and management for simple and reliable multi-undo implementation
-//## | zip__*                 | family of procs   | 1.00.060  | 18apr2025   | ZIP archive creation procs - 19jul2024
+//## | res__*                 | family of procs   | 1.00.020  | 14sep2025   | resource support procs - 26aug2026
+//## | zip__*                 | family of procs   | 1.00.072  | 24aug2025   | ZIP archive creation procs - 18apr2025, 19jul2024
+//## | filter__*              | family of procs   | 1.00.020  | 18sep2025   | Complex mask procs - 04nov2019
+//## | tstophere              | tobject           | 1.00.102  | 02nov2025   | Stop code execution with 1ms wake - 02nov2025: auto-corrects thread pause failure (PC hibernate 2+ hrs), 05sep2025
+//## | tstoprun               | tobject           | 1.00.065  | 05sep2025   | Start/stop thread control with push-pull code processing
+//## | tbasicthread           | tobject           | 1.00.480  | 02nov2025   | Tri-proc (one tri-mode), 1ms wake, 1-10ms host responsive, dedicated push-pull code transaction, and 2-stage failure fallback - 13sep2025, 07sep2025, 02sep2025, 27aug2025, 20aug2025, 15aug2025
+//## | tbasictimer            | tbasicthread      | 1.00.021  | 15aug2025   | High speed timer
+//## | tbasictimer2           | tbasicthread      | 1.00.011  | 15aug2025   | High speed timer with integrated thread level oncreate/ontimer/ondestroy events
 //## | twproc                 | tobject           | 1.00.021  | 04may2024   | Window based window message handler - 09feb2024: fixed destroy(), 23dec2023
-//## | tstr8                  | tobjectex         | 1.00.770  | 28may2025   | 8bit binary memory handler - memory as one chunk - 15may2025, 25feb2024: splice() proc, 26dec2023, 27dec2022, 20mar2022, 27dec2021, 28jul2021, 30apr2021, 14feb2021, 28jan2021, 21aug2020
+//## | tstr8                  | tobjectex         | 1.00.791  | 23oct2025   | 8bit binary memory handler - memory as one chunk - 29aug2025, 28may2025, 15may2025, 25feb2024: splice() proc, 26dec2023, 27dec2022, 20mar2022, 27dec2021, 28jul2021, 30apr2021, 14feb2021, 28jan2021, 21aug2020
 //## | tstr9                  | tobjectex         | 1.00.268  | 15mar2025   | 8bit binary memory handler - memory as a stream of randomly allocated memory blocks - 07mar2024: softclear2(), 25feb2024: splice() proc, 07feb2024: Optimised for speed, 04feb2024: Created
 //## | tvars8                 | tobject           | 1.00.245  | 12may2025   | 8bit binary replacement for "tdynamicvars" and "tdynamictext" -> simple, fast, and lighter with full binary support (no string used) - 28jun2024, 26jun2024: updated, 15jan2024, 31jan2022, 02jan2022, 16aug2020
-//## | tfastvars              | tobject           | 1.00.110  | 12oct2024   | Faster version of tvars8 (10x faster) and simpler - 12oct2024: dedicated getdata/setdata procs for IN ORDER processing of items, 24aug2024, 24mar2024: fixed ilimit (was: max-1 => now: max+1) 07feb2024: updated, 12jan2024: support for tstr9 in sfoundB() proc, 25dec2023
+//## | tfastvars              | tobject           | 1.00.112  | 19aug2025   | Faster version of tvars8 (10x faster) and simpler - 12oct2024, 12oct2024: dedicated getdata/setdata procs for IN ORDER processing of items, 24aug2024, 24mar2024: fixed ilimit (was: max-1 => now: max+1) 07feb2024: updated, 12jan2024: support for tstr9 in sfoundB() proc, 25dec2023
 //## | tmask8                 | tobject           | 1.00.360  | 07jul2021   | 10may2020, Rapid 8bit graphic mask for tracking onscreen window areas (square and rounded) at speed: WRITE: 101x[1920x1080] mask redraws in under 500ms ~ 5ms/mask and READ: 101x[1920x1080] mask scans in under 1,100ms ~11ms/mask on Intel Atom 1.1Ghz
 //## | tdynamiclist           | tobject           | 1.00.120  | 25jul2024   | Base class for dynamic arrays/lists of differing structures: byte, word, longint, currency, pointer etc. - 25jul2024: forcesize() proc, 09feb2024: removed "protected" for "public", 08aug2017
 //## | tdynamicbyte           | tdynamiclist      | 1.00.010  | 09feb2024   | Dynamic array of byte (1b/item) - 09feb2024: removed "protected" for "public", 21jun2006
@@ -194,6 +203,19 @@ const
    rsGUI      =4;
    rsMax      =4;
 
+   //.tinputcolorise code override values - 21aug2025
+   icNone     =0;
+   icTrue     =1;
+   icFalse    =2;
+   icMinLen   =3;//06nov2025
+   icMax      =3;
+
+   //.basicthread
+   basUseThread   =0;//use internal thread
+   basNoThread    =1;//use host thread with lock arrangement: enter1 -> proc2 -> leave1 - deadlock will occur if proc2 uses enter1
+   basNoLocks     =2;//use host thread without locks -> safe for proc2 in host thread to use enter1..leave1 without deadlock
+   basMax         =2;
+
    //.nurmerical support
    rcode          =#13#10;
    r10            =#10;
@@ -230,6 +252,22 @@ const
    maxrow         =(max16*10);//safe range (0..655,350) - 28dec2023
    maxpixel       =max32 div 50;//safe even for large color sets such as "tcolor96" - 29apr2020
 
+   
+   //message box ---------------------------------------------------------------
+   mbCustom           =$0;
+   mbError            =$10;
+   mbInformation      =$40;
+   mbWarning          =$30;
+   mbrYes             =6;
+   mbrNo              =7;
+
+   MB_OK              = $00000000;
+   MB_OKCANCEL        = $00000001;
+   MB_ABORTRETRYIGNORE = $00000002;
+   MB_YESNOCANCEL     = $00000003;
+   MB_YESNO           = $00000004;
+   MB_RETRYCANCEL     = $00000005;
+
    //.bitmap header sizes and their meanings
    hsOS2              =12;
    hsW95              =40;
@@ -259,6 +297,9 @@ const
    int_1_0_0      =1   + (0*256)   + (0*256*256);
    int_0_1_0      =0   + (1*256)   + (0*256*256);
    int_0_0_1      =0   + (0*256)   + (1*256*256);
+   col_white24    =int_255_255_255;
+   col_grey24     =int_127_127_127;
+   col_black24    =0;
 
    //.corner ratio's -> main form only
    viCornerA=10;
@@ -414,7 +455,13 @@ const
    tepMove20               =145;
    tepEyedropper20         =146;
    tepWraphorz20           =147;
-
+   tepNotepad20            =148;//18sep2025
+   tepPaint20              =149;//18sep2025
+   tepPause20              =150;//29sep2025
+   tepImage20              =151;//09nov2025
+   tepCode20               =152;//09nov2025
+   tepUnit20               =153;
+   tepCompress20           =154;
 
    //.file format teps
    tepXXX20                =170;
@@ -530,15 +577,16 @@ const
    wm_onmessage_mm      =WM_USER + $0002;//multimedia message -> route to snd unit - 22jun2024
    wm_onmessage_wave    =WM_USER + $0003;//wave message -> route to snd unit
    wm_onmessage_netraw  =WM_USER + $0004;//raw/unmanaged networking - 04apr2025
+   wm_onmessage_nn      =WM_USER + $0005;//route window message for socket based communications to the nn__* subsystem - 01oct2025
 
    //System Stats Counters -----------------------------------------------------
    track_limit           =200;
 
    track_Overview_start   =1;
-   track_Overview_finish  =10+track_Overview_start;
+   track_Overview_finish  =23+track_Overview_start;
 
    track_Core_start       =track_Overview_finish+3;//allow for blank line and title
-   track_Core_finish      =59+track_Core_start;
+   track_Core_finish      =56+track_Core_start;
 
    track_GUI_start        =track_Core_finish+3;//allow for blank line and title
    track_GUI_finish       =31+track_GUI_start;
@@ -548,35 +596,47 @@ const
    track_endof_gui       =track_GUI_finish;
 
    //.overview -> use "track__inc()" proc
-   satErrors           =0+track_Overview_start;
-   satMaskcapture      =1+track_Overview_start;
-   satPartpaint        =2+track_Overview_start;
-   satFullpaint        =3+track_Overview_start;
-   satPartalign        =4+track_Overview_start;
-   satFullalign        =5+track_Overview_start;
-   satDragcount        =6+track_Overview_start;
-   satDragcapture      =7+track_Overview_start;
-   satDragpaint        =8+track_Overview_start;
-   satSizecount        =9+track_Overview_start;
-   satSysFont          =10+track_Overview_start;
-   satTotalCore        =11+track_Overview_start;//sources value from "satCoreTotal"
-   satTotalGUI         =12+track_Overview_start;//sources value from "satGUITotal"
+   satUpTime           =0+track_Overview_start;
+   satDPIawareV2       =1+track_Overview_start;
+   satGUIresources     =2+track_Overview_start;
+   satDLLload          =3+track_Overview_start;
+   satAPIload          =4+track_Overview_start;
+   satAPIcalls         =5+track_Overview_start;
+   satMemory           =6+track_Overview_start;
+   satMemoryCount      =7+track_Overview_start;
+   satMemoryCreateCount=8+track_Overview_start;
+   satMemoryFreeCount  =9+track_Overview_start;
+
+   satErrors           =10+track_Overview_start;
+   satThreadFixes      =11+track_Overview_start;//02nov2025
+   satMaskcapture      =12+track_Overview_start;
+   satPartpaint        =13+track_Overview_start;
+   satFullpaint        =14+track_Overview_start;
+   satPartalign        =15+track_Overview_start;
+   satFullalign        =16+track_Overview_start;
+   satDragcount        =17+track_Overview_start;
+   satDragcapture      =18+track_Overview_start;
+   satDragpaint        =19+track_Overview_start;
+   satSizecount        =20+track_Overview_start;
+   satSysFont          =21+track_Overview_start;
+   satTotalCore        =22+track_Overview_start;//sources value from "satCoreTotal"
+   satTotalGUI         =23+track_Overview_start;//sources value from "satGUITotal"
 
    //.core
    satCoreTotal        =0+track_Core_start;
    satObjectex         =1+track_Core_start;
-   satStr8             =2+track_Core_start;
-   satMask8            =3+track_Core_start;
-   satBmp              =4+track_Core_start;
-   satBasicimage       =5+track_Core_start;
-   satBWP              =6+track_Core_start;
-   satDynlist          =7+track_Core_start;
-   satDynbyte          =8+track_Core_start;
-   satDynint           =9+track_Core_start;
-   satDynstr           =10+track_Core_start;
-   satFrame            =11+track_Core_start;//31jan2021
-   //
-   satBitmap           =13+track_Core_start;
+   satSmall8           =2+track_Core_start;
+   satStr8             =3+track_Core_start;
+   satMask8            =4+track_Core_start;
+   satBmp              =5+track_Core_start;
+   satWinbmp           =6+track_Core_start;
+   satBasicimage       =7+track_Core_start;
+   satBWP              =8+track_Core_start;
+   satDynlist          =9+track_Core_start;
+   satDynbyte          =10+track_Core_start;
+   satDynint           =11+track_Core_start;
+   satDynstr           =12+track_Core_start;
+   satFrame            =13+track_Core_start;//31jan2021
    satMidi             =14+track_Core_start;//07feb2021
    satMidiopen         =15+track_Core_start;//07feb2021
    satMidiblocks       =16+track_Core_start;
@@ -588,42 +648,39 @@ const
    satPstring          =22+track_Core_start;
    satWave             =23+track_Core_start;
    satWaveopen         =24+track_Core_start;
-   //
-   satDyndate          =26+track_Core_start;
-   satDynstr8          =27+track_Core_start;//28dec2023
-   satDyncur           =28+track_Core_start;
-   satDyncomp          =29+track_Core_start;
-   satDynptr           =30+track_Core_start;//04feb2024
-   satStr9             =31+track_Core_start;//04feb2024
-   satDynstr9          =32+track_Core_start;//07feb2024
-   satBlock            =33+track_Core_start;//17feb2024
-   satDynname          =34+track_Core_start;//31mar2024
-   satDynnamelist      =35+track_Core_start;//31mar2024
-   satDynvars          =36+track_Core_start;//09apr2024
-   satNV               =37+track_Core_start;//09apr2024
-   satAudio            =38+track_Core_start;//22jun2024
-   satMM               =39+track_Core_start;//22jun2024
-   satChimes           =40+track_Core_start;//22jun2024
-   satSnd32            =41+track_Core_start;//22jun2024
-   satFastvars         =42+track_Core_start;//28jun2024
-   satNetmore          =43+track_Core_start;//28jun2024
-   satRawimage         =44+track_Core_start;//25jul2024
-   satRegion           =45+track_Core_start;//01aug2024
-   satGifsupport       =46+track_Core_start;//04aug2024
-   satDynword          =47+track_Core_start;//10aug2024
-   satSpell            =48+track_Core_start;
-   satPlaylist         =49+track_Core_start;
-   satHashtable        =50+track_Core_start;
-   satNetbasic         =51+track_Core_start;
-   satWproc            =52+track_Core_start;
-   satIntlist          =53+track_Core_start;
-   satCmplist          =54+track_Core_start;
-   //
-   //
-   satTBT              =57+track_Core_start;
-   satBasicapp         =58+track_Core_start;
-   satImageexts        =59+track_Core_start;
-   
+   satDyndate          =25+track_Core_start;
+   satDynstr8          =26+track_Core_start;//28dec2023
+   satDyncur           =27+track_Core_start;
+   satDyncomp          =28+track_Core_start;
+   satDynptr           =29+track_Core_start;//04feb2024
+   satStr9             =30+track_Core_start;//04feb2024
+   satDynstr9          =31+track_Core_start;//07feb2024
+   satBlock            =32+track_Core_start;//17feb2024
+   satDynname          =33+track_Core_start;//31mar2024
+   satDynnamelist      =34+track_Core_start;//31mar2024
+   satDynvars          =35+track_Core_start;//09apr2024
+   satNV               =36+track_Core_start;//09apr2024
+   satAudio            =37+track_Core_start;//22jun2024
+   satMM               =38+track_Core_start;//22jun2024
+   satChimes           =39+track_Core_start;//22jun2024
+   satSnd32            =40+track_Core_start;//22jun2024
+   satFastvars         =41+track_Core_start;//28jun2024
+   satNetmore          =42+track_Core_start;//28jun2024
+   satRawimage         =43+track_Core_start;//25jul2024
+   satRegion           =44+track_Core_start;//01aug2024
+   satGifsupport       =45+track_Core_start;//04aug2024
+   satDynword          =46+track_Core_start;//10aug2024
+   satSpell            =47+track_Core_start;
+   satPlaylist         =48+track_Core_start;
+   satHashtable        =49+track_Core_start;
+   satNetbasic         =50+track_Core_start;
+   satWproc            =51+track_Core_start;
+   satIntlist          =52+track_Core_start;
+   satCmplist          =53+track_Core_start;
+   satTBT              =54+track_Core_start;
+   satBasicapp         =55+track_Core_start;
+   satImageexts        =56+track_Core_start;
+
    //.gui
    satGuiTotal         =0+track_GUI_start;
    satSystem           =1+track_GUI_start;
@@ -944,6 +1001,8 @@ const
    febmp          ='bmp';
    fedib          ='dib';//14may2025
    feimg32        ='img32';//26jul2024
+   fesan          ='san';//16sep2025
+   fepic8         ='pic8';//16sep2025
    fetj32         ='tj32';//27jul2024
    fegif          ='gif';
    fetga          ='tga';//20dec2024
@@ -1011,9 +1070,11 @@ const
                    fexbm+fesepX+
                    fetea+fesepX+
                    feimg32+fesepX+
+                   fesan+fesepX+//16sep2025
+                   {$ifdef gamecore}fepic8+fesepX+{$endif}//16sep2025
                    {$ifdef jpeg}fetj32+{$endif} '';
    feallcurs      =fecur+fesepX+feani;
-   feallcurs2     =fecur+fesepX+feani+fesepX+feico+fesepX+fepng+fesepX+fegif;//29may2025, 22may2022
+   feallcurs2     =fecur+fesepX+feani+fesepX+feico+fesepX+fepng+fesepX+fegif+fesepX+fesan+fesepX+fetea+fesepX+feimg32{$ifdef gamecore}+fesepX+fepic8{$endif};//29may2025, 22may2022
    fealljpgs      ={$ifdef jpeg}fejpg+fesepX+fejif+fesepX+fejpeg+{$endif} '';
    febrowserimgs  =fepng+fesepX+
                    fegif+fesepX+
@@ -1030,8 +1091,10 @@ const
                    fepnm+fesepX+
                    fetea+fesepX+
                    feimg32+fesepX+
+                   fesan+fesepX+
+                   {$ifdef gamecore}fepic8+fesepX+{$endif}//16sep2025
                    '';
-                   
+
    //Preformatted File Extension Codes
    peany          =feany+fesep;//special
    pebat          =febat+fesep;
@@ -1049,6 +1112,8 @@ const
    pebmp          =febmp+fesep;
    pedib          =fedib+fesep;
    peimg32        =feimg32+fesep;
+   pesan          =fesan+fesep;
+   pepic8         =fepic8+fesep;
    petj32         =fetj32+fesep;
    pegif          =fegif+fesep;
    petga          =fetga+fesep;
@@ -1349,10 +1414,12 @@ const
    glseTextDecrypt     =3;
 
 type
+   TValueType        = (vaNull, vaList, vaInt8, vaInt16, vaInt32, vaExtended, vaString, vaIdent, vaFalse, vaTrue, vaBinary, vaSet, vaLString, vaNil, vaCollection);
    tmultiptr         = longint;
    pobject           =^tobject;
    tpointer          =^pointer;
    tnotifyevent      =procedure(sender:tobject) of object;
+   tthreadproc2      =function(sender:tobject;const xcode:longint;var xreplycode:longint;const xWithinThread:boolean):boolean of object;//01sep2025
    twinmsg           =function(m,w,l:longint):longint of object;//07jul2025
    tevent            =tnotifyevent;//procedure(sender:tobject) of object;
    tdrivelist        =array[0..25] of boolean;//0=A, 1=B, 2=C..25=Z
@@ -1375,15 +1442,18 @@ type
    tbuffer1024       =array[0..1023] of byte;//04may2025
    tbuffer4096       =array[0..4095] of byte;
 
-   //.system threads
-   tsysthread_buffer =array[0..9999] of byte;
-   TFNThreadStartRoutine=TFarProc;
-   TFNTimeCallBack      =procedure(uTimerID,uMessage:UINT;dwUser,dw1,dw2:dword) stdcall;// <<-- special note: NO semicolon between "dword)" and "stdcall"!!!!
-
    ttimestamp=record
     time:longint;//number of milliseconds since midnight
     date:longint;//one plus number of days since 1/1/0001
     end;
+
+   //crc__* proc support - 21aug2025
+   pseedcrc32=^tseedcrc32;
+   tseedcrc32=record
+      ref     :array[0..255] of longint;
+      val     :longint;
+      xresult :longint;
+      end;
 
    //.color
    pcolor8       =^tcolor8;      tcolor8 =byte;
@@ -1552,19 +1622,240 @@ type
     use32:boolean;
     end;
 
-   //see procs starting with "inputcolorise__" 
+   //see procs starting with "inputcolorise__"
    pinputcolorise=^tinputcolorise;
    tinputcolorise=record
     use      :boolean;//true=use this record
     minlen   :longint;//minimum length before coloring the background of the control with backTRUE, else color background with backFALSE
     backTRUE :longint;//clnone=off=don't use
     backFALSE:longint;//clnone=off=don't use
+    code     :longint;//use code to override behaviour - icNone,icTrue,icFalse, or icMinLen
     end;
 
 {low__filelist3}
    tsearchrecevent =function(var xfolder:string;var xrec:tsearchrec;var xsize:comp;var xdate:tdatetime;xisfile,xisfolder:boolean;xhelper:tobject):boolean of object;//return true to keep processing, false=to cancel/stop
    tsearchrecevent2=function(var xfolder:string;var xrec:tsearchrec;var xsize:comp;var xdate:tdatetime;xisfile,xisfolder:boolean;xhelper:tobject):boolean;//return true to keep processing, false=to cancel/stop
 
+
+//code control -----------------------------------------------------------------
+
+{tstophere}
+//xxxxxxxxxxxxxxxxxxxxxxx//eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+   tstophere=class(tobject)//stop-start code execution at a point in code via a high-speed multimedia timer
+   private
+
+    ihandle     :thandle;
+    ifixtime64  :comp;//02nov2025
+    itimerid    :longint;
+    ilastms     :longint;
+    ihalt       :boolean;
+    ibackupwait :boolean;
+    ierrorcode  :longint;
+
+    //support procs
+    procedure xmaketimer(const xms:longint);
+    procedure xreset;//02nov2025 -> internal use only
+    procedure xAutoFixPauseFailure;
+
+   public
+
+    //options
+    oAutoFixPauseFailure:boolean;//detects long delays between calls to "stop()" procs -> assumes thread was alseep (PC powered down) for long time -> can cause thread pause failure -> enabled by default - 02nov2025
+
+    //create
+    constructor create; virtual;
+    destructor destroy; override;
+
+    //information
+    property handle   :thandle     read ihandle;
+    property halted   :boolean     read ihalt;
+    property errorcode:longint     read ierrorcode;//0=OK, 1=FAIL: Multimedia Timer, 2=FAIL: Event
+
+    //workers
+    procedure stop;
+    procedure stop2(xms:longint);
+    procedure stop3(xms:longint;xuseSleep:boolean);
+    procedure start;
+    procedure safecall__start2(const x:thandle);
+    procedure halt;//discontinue operations
+
+   end;
+
+{tstoprun}
+//rrrrrrrrrrrrrrrrrrrrrrrrrrr
+   tstoprun=class(tobject)//stop or run for controlling thread activity
+   private
+
+    ihandle      :thandle;
+    ihalt        :boolean;
+    irunning     :boolean;
+    ipushcode    :longint;
+    ipullwait    :boolean;
+    ipullcode    :longint;
+    istarted     :boolean;
+    ifinished    :boolean;
+
+    //safe code section
+    procedure xenter1;
+    procedure xleave1;
+
+    //support procs
+    function getrunning:boolean;
+
+   public
+
+    //create
+    constructor create(const xuniquename:string); virtual;
+    destructor destroy; override;
+
+    //information
+    property handle     :thandle     read ihandle;
+    property halted     :boolean     read ihalt;
+    property running    :boolean     read getrunning;
+
+    //waitfor
+    procedure waitforstart;
+    procedure waitforfinish;
+
+    //stop
+    function canstop:boolean;
+    function stop:boolean;
+
+    //run
+    function canrun:boolean;
+    function run:boolean;
+
+    //code processing
+    function pushcode(const xcode:longint):boolean;
+    function pullcode(var xcode:longint):boolean;
+    function pullcode2(var xcode:longint;const xfast:boolean):boolean;
+
+    //thread procs
+    procedure threadlevel__started;
+    procedure threadlevel__finished;
+    function threadlevel__havecode(var xcode:longint):boolean;//true=have a push request, must process the code and return reply even if thread doesn't understand the code
+    procedure threadlevel__replycode(const xreplycode:longint);
+
+    //support
+    procedure xwait__fortrue2(var xvar:boolean;const xfast:boolean);
+    procedure halt;//discontinue operations
+
+   end;
+
+
+{tbasicthread}
+   tbasicthread=class(tobject)
+   private
+
+    iproctimer,itimer1000:comp;
+    ithread__proccount,ithread__procid,ithread__mspeaklag,istopid,ipcount,iprocms,ims:longint;
+    imsrate,imspert:double;
+    ithreadid      :dword;
+    ithreadhandle  :thandle;
+    iprocok        :boolean;
+    iprocidle0     :boolean;
+
+    //stop thread execution at one location with auto-wake intervals down to 1 ms
+    istophere:tstophere;
+
+    //start-stop thread execution with optional code processing
+    istoprun:tstoprun;
+
+    function xoversight:dword;//1st
+    function xrunprocs:dword; //2nd
+
+    function xstressTest:boolean;
+    function xcanproc:boolean;
+    procedure setms(x:longint);
+
+   public
+
+    //create
+    constructor create; virtual;
+    destructor destroy; override;
+
+    //core proces
+    procedure __createOutsideThread;   virtual;
+    procedure __createWithinThread;    virtual;
+    procedure __threadProc0;           virtual;//executes outside of enter1..leave1
+    procedure __threadProc1;           virtual;//execute within enter1..leave1
+    procedure __threadProc2(const xcode:longint;var xreplycode:longint;const xWithinThread:boolean); virtual;//can execute within enter1..leave1 or outside of it - 01sep2025
+    procedure __destroyWithinThread;   virtual;
+    procedure __destroyOutsideThread;  virtual;
+    procedure __finished;
+
+    //information
+    property ms              :longint   read ims write setms;
+    property msrate          :double    read imsrate;//achieved ms interval
+    property mspert100       :double    read imspert;
+    property pcount          :longint   read ipcount;//number of times per second proc is fired
+    property threadhandle    :thandle   read ithreadhandle;
+    property threadid        :dword     read ithreadid;
+    function errorcode       :longint;//0=OK, 1=FAIL: Multimedia Timer, 2=FAIL: Event, 3=FAIL: Mutex
+    function errormsg        :string;//07sep2025
+
+    //flow control
+    function canstop:boolean;
+    procedure stop;
+
+    function canrun:boolean;
+    procedure run;
+
+    function stopped:boolean;
+    function running:boolean;
+
+    //.enter/leave -> use for custom host-to-thread synchronisation -> enter=pauses thread, leave=resumes thread (mutex controlled)
+    function enter1:boolean;
+    function leave1:boolean;
+
+    //manually triggered proc2 execution -> has its own flow control
+    function waitforproc2(const xstyle,xcode:longint;const xWaitAllProcsIdle012:boolean):boolean;//13sep2025, 03sep2025, 01sep2025
+    function waitforproc22(const xstyle,xcode:longint;var xreplycode:longint;const xWaitAllProcsIdle012:boolean):boolean;//13sep2025, 04sep2025, 01sep2025
+
+    //shutdown the thread
+    procedure halt;
+
+    //support
+    function check__procIsStopped:boolean;
+    function check__procIsStopped2(var bol1,bol2:boolean):boolean;
+
+   end;
+
+{tbasictimer}
+   tbasictimer=class(tbasicthread)
+   private
+
+    fontimer:tnotifyevent;
+
+   public
+
+    constructor create;               override;
+    destructor destroy;               override;
+    procedure __createOutsideThread;  override;
+    procedure __destroyOutsideThread; override;
+    procedure __threadProc1;          override;
+
+    property ontimer:tnotifyevent read fontimer write fontimer;
+
+   end;
+
+{tbasictimer2}
+   tbasictimer2=class(tbasicthread)
+   private
+
+    foncreate,fontimer,fondestroy:tnotifyevent;
+    fonproc2:tthreadproc2;
+
+   public
+
+    constructor create(xoncreate,xontimer,xondestroy:tnotifyevent;xonproc2:tthreadproc2); virtual;
+    destructor destroy;               override;
+    procedure __createWithinThread;   override;
+    procedure __destroyWithinThread;  override;
+    procedure __threadProc1;          override;
+    procedure __threadProc2(const xcode:longint;var xreplycode:longint;const xWithinThread:boolean); override;//01sep2025
+
+   end;
 
 {tobjectex}
    tobjectex=class(tobject)
@@ -1599,7 +1890,6 @@ type
     procedure setbpi(x:longint);//bytes per item
     procedure setincsize(x:longint);
     function notify(s,f:longint;_event:tdynamiclistevent):boolean;
-    procedure sdm_track(xby:comp);
    public
     //internal vars - do not reference directly - for use by other class types
     itextsupported:boolean;
@@ -2147,7 +2437,7 @@ type
    private
     iownmemory,iglobal:boolean;//default=false=local memory in use, true=global memory in use
     idata:pointer;
-    ilockcount,idatalen,icount:longint;//datalen=size of allocated memory | count=size of memory in use by user
+    ifloatsize,ilockcount,idatalen,icount:longint;//datalen=size of allocated memory | count=size of memory in use by user
     ichars :pdlchar;
     ibytes :pdlbyte;
     iints4 :pdllongint;
@@ -2156,6 +2446,9 @@ type
     irows16:pcolorrows16;
     irows24:pcolorrows24;
     irows32:pcolorrows32;
+
+
+    procedure setfloatsize(x:longint);//29aug2025
     function getbytes(x:longint):byte;
     procedure setbytes(x:longint;xval:byte);
     function getbytes1(x:longint):byte;//1-based
@@ -2240,7 +2533,7 @@ type
     //create
     constructor create(xlen:longint); virtual;
     destructor destroy; override;
-    function xresize(x:longint;xsetcount:boolean):boolean;
+    function xresize(x:longint;xsetcount:boolean):boolean;//29aug2025
     function copyfrom(s:tstr8):boolean;//09feb2022
 
     //lock - disables "oautofree" whilst many layers are working on same object - 19aug2020
@@ -2256,6 +2549,7 @@ type
     property datalen:longint read idatalen;//actual internal size of data buffer - 25sep2020
     property len:longint read icount;
     property count:longint read icount;
+    property floatsize:longint read ifloatsize write setfloatsize;
     property chars[x:longint]:char read getchars write setchars;
     property bytes[x:longint]:byte read getbytes write setbytes;//0-based
     property bytes1[x:longint]:byte read getbytes1 write setbytes1;//1-based
@@ -2373,7 +2667,7 @@ type
     property nullstr[xpos:longint;xlen:longint]:string read getnullstr;//0-based
     property nullstr1[xpos:longint;xlen:longint]:string read getnullstr1;//1-based
     function setarray(xpos:longint;const xval:array of byte):boolean;
-    property text:string read gettext write settext;//use carefully -> D10 uses unicode
+    property text :string read gettext write settext;//use carefully -> D10 uses unicode
     property textarray:string read gettextarray;
 
     //.replace support
@@ -2870,8 +3164,7 @@ type
     end;
     {$endif}
 
-
-//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//000000000000000000000000000000000//111111111111111111111
+    
 const
    //days between 1/1/0001 and 12/31/1899
    date__datedelta    =693594;
@@ -2880,6 +3173,13 @@ const
    date__FMSecsPerDay:single  = date__msperday;
    date__IMSecsPerDay:longint = date__msperday;
    date__monthdays:array [boolean] of tdaytable =((31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31));
+
+type
+
+   tslowms64=record
+     ms    :comp;
+     scan  :longint;
+     end;
 
 var
    //.started
@@ -2897,14 +3197,19 @@ var
    info_mode              :longint=0;//0=unset, 1=console app, 2=console app as a service, 3=gui app
 
 
+   //small support for optimisation - 29aug2025 --------------------------------
+
+   system_small_use8             :array[0..99] of boolean;
+   system_small_str8             :array[0..99] of tstr8;
+
+
    //.system message links - 07jul2025
    systemmessage__mm_wom_done   :twinmsg=nil;
-
+   systemmessage__nn            :twinmsg=nil;//01oct2025
 
    //.system control tracking
    track_lastcreate       :longint=-1;
    track_lastdestroy      :longint=-1;
-   track_bytes            :comp=0;//total memory allocated for pointers
    track_total            :longint=0;//all instances counter
    track_active           :array[0..(track_limit-1)] of longint;
    track_create           :array[0..(track_limit-1)] of longint;
@@ -2920,22 +3225,26 @@ var
    sysleak_show          :boolean;
 
    //.64bit system timer - Delphi 3
-   system_ms64_init       :boolean=false;
-   system_ms64_last       :comp=0;
-   system_ms64_offset     :comp=0;
+   system_ms64_divval    :comp=0;//15aug2025
+   system_ns64_divval    :comp=0;//15aug2025
+
+   //.64bit less demanding version
+   system_slowms64       :tslowms64=(ms:0;scan:0);
+
    //.relative 64bit timer
    msr64__ref            :comp=0;
    msr64__speed          :longint=100;//10%...1,000% where 100% is normal speed - 20feb2021
+
    //.32bit minute timer
    system_min32_val       :longint=0;
 
    //.crc32 support
    sys_crc32             :array[0..255] of longint;
    sys_initcrc32         :boolean=false;
+
    //.ref support
    p4INT32               :array[0..32] of longint;
    p8CMP256              :array[0..256] of comp;
-
 
    //.system values
    vizoom              :longint=1;
@@ -2956,6 +3265,15 @@ var
    system_boot         :comp=0;//ms
    system_boot_date    :tdatetime=0;
    system_ecomode_pause:comp=0;//timer for overriding eco mode by App to keep performance up - 06dec2024
+   system_root_str8    :tstr8=nil;
+   system_root_str9    :tstr9=nil;
+   system_coldlg_clist :array[0..15] of tcolor32;//required by MS color dialog
+
+   //.memory tracking
+   system_memory_bytes            :comp=0;
+   system_memory_count            :comp=0;
+   system_memory_createcount      :comp=0;
+   system_memory_freecount        :comp=0;
 
    //.os version information - 26apr2025
    system_osid     :longint=0;
@@ -2963,7 +3281,7 @@ var
    system_osminver :longint=0;
    system_osbuild  :longint=0;
    system_osstr    :string='';
-   system_osWin98  :boolean=false;//01jun2025
+   system_osWin9X  :boolean=false;//26sep2025, 01jun2025
 
    //.printer list
    system_printerlist            :tdynamicstring=nil;
@@ -2971,7 +3289,7 @@ var
    system_printerattr            :tdynamicinteger=nil;
    system_printer_devicetimeout  :tdynamicinteger=nil;
    system_printer_retrytimeout   :tdynamicinteger=nil;
-   
+
    //.font list
    system_fontlist_screen        :tdynamicstring=nil;
    system_fontlist_printer       :tdynamicstring=nil;
@@ -2999,9 +3317,11 @@ var
    system_stdin        :thandle;
    system_line_str     :string='';
    system_timeperiod   :longint=0;//not set -> adjusts main thread's timing accuracy -> see the proc "root__settimeperiod()" - 14mar2024
+
    //.turbo
    system_turbo        :boolean=false;//false=idling, true=working/powering through tasks
    system_turboref     :comp=0;
+
    //.idle trackers - gui related - 15jan2025
    syskeytime            :comp=0;
    sysclicktime          :comp=0;
@@ -3011,6 +3331,7 @@ var
    sysmovetime_globaly   :longint=min32;
    sysdowntime           :comp=0;
    syswheeltime          :comp=0;
+
    //.system timers
    system_timer1       :tnotifyevent=nil;
    system_timer2       :tnotifyevent=nil;
@@ -3018,52 +3339,27 @@ var
    system_timer4       :tnotifyevent=nil;
    system_timer5       :tnotifyevent=nil;
    system_timer500     :comp=0;
-   //.system threads
-   systhread_initall   :boolean=false;
-   systhread_running   :array[0..9] of boolean;
-   systhread_ready     :array[0..9] of boolean;
-   systhread_muststop  :array[0..9] of boolean;
-   systhread_handle    :array[0..9] of hwnd;
-   systhread_id        :array[0..9] of longint;
-   systhread_timerid   :array[0..9] of longint;
-   systhread_timerms   :array[0..9] of longint;
-   systhread_usingtimer:array[0..9] of boolean;
-   systhread_fast64    :array[0..9] of comp;//0=use full specified speed, 1..N=use either full speed (if >=ms64FAST) or throttle back to slower speed when ( <ms64FAST) - 05mar2022
-   //.lag time
-   systhread_lag       :array[0..9] of comp;
-   systhread_lastlag   :array[0..9] of comp;
-   systhread_lagref    :array[0..9] of comp;
-   systhread_ref1000   :array[0..9] of comp;
-   //.io buffers
-   systhread_bufferid  :array[0..9] of longint;//set by sender
-   systhread_bufferid2 :array[0..9] of longint;//set by thread when it's read the buffer and then replied
-   systhread_cmd       :array[0..9] of longint;//what to do with buffer -> send by sender
-   systhread_bufferlen :array[0..9] of longint;
-   systhread_buffer    :array[0..9] of tsysthread_buffer;
+
    //.app states
    system_storeapp       :boolean=false;//gossgui__start detects status and sets to TRUE when this program is wrapped up/installed as a Micrsoft Windows Store App -> looks for "sys-<programname>.app" in the "BE\settings\" subfolder - 30mar2022
    system_paid           :boolean=false;//false=Free to Use, true=Licensed - 30mar2022
+
    //.ia based suppression - 21dec2024
    system_ia_useroptions_suppress_all      :boolean=false;
    system_ia_useroptions_suppress_masklist :string='';
 
+
    //.monitor support - 26nov2024 ----------------------------------------------
    system_monitors_dpiAwareV2                 :boolean=false;//true=Windows will not bitmap stretch our windows as it's up to us to perform the scaling required -> late Win10 onwards - 27nov2024
    system_monitors_init                       :boolean=false;
-   system_monitors_EnumDisplayMonitors        :TEnumDisplayMonitors=nil;
-   system_monitors_GetMonitorInfoA            :TGetMonitorInfoA=nil;
-   system_monitors_GetDpiForMonitor           :TGetDpiForMonitor=nil;
-   system_monitors_SetLayeredWindowAttributes :TSetLayeredWindowAttributes=nil;
    system_monitors_count                      :longint=0;//number of monitors on the system
    system_monitors_activecount                :longint=0;//number of monitors plugged in
    system_monitors_primaryindex               :longint=0;//index to primary monitor record
-
    system_monitors_hmonitor                   :array[0..99] of hmonitor;//handle to monitor
    system_monitors_area                       :array[0..99] of twinrect;
    system_monitors_workarea                   :array[0..99] of twinrect;
    system_monitors_primary                    :array[0..99] of boolean;
    system_monitors_scale                      :array[0..99] of longint;//normal=100
-
    system_monitors_totalarea                  :twinrect;
    system_monitors_totalworkarea              :twinrect;
 
@@ -3093,6 +3389,7 @@ var
 procedure gossroot__start;
 procedure gossroot__stop;
 
+
 //info procs -------------------------------------------------------------------
 function app__info(xname:string):string;
 function app__bol(xname:string):boolean;
@@ -3101,6 +3398,7 @@ function info__root(xname:string):string;//information specific to this unit of 
 function info__rootfind(xname:string):string;//central point from which to find the requested information - 08aug2025, 09apr2024
 function info__mode:longint;
 function splash__findvalue(x:longint;var xname,xvalue:string):boolean;//14jul2025
+
 
 //compatiblity procs -----------------------------------------------------------
 function rthtranslate(x:string):string;//31JAN2011, 05OCT2007 - don't translate, just mark the text for "sniffer", since text will be translated in realtime on demand
@@ -3190,11 +3488,12 @@ function track__limit:longint;
 procedure track__inc(xindex,xcreate:longint);
 function track__count(xindex:longint):longint;//same as "track__val"
 function track__val(xindex:longint):longint;//17dec2024
+function track__create(xindex:longint;xcreate:boolean):longint;//29aug2025
 function track__str(xindex:longint):string;
 function track__label(x:longint):string;
 function track__sum:string;
 function track__findvalue_count:longint;
-function track__findvalue(xindex:longint;var xcount:longint;var xname,xvalue:string;var xtitle:boolean):boolean;//17dec2024
+function track__findvalue(xindex:longint;xnumber:boolean;var xcount:longint;var xname,xvalue,xcreateval,xdestroyval:string;var xtitle:boolean):boolean;//28aug2025, 24aug2025, 17dec2024
 
 //leak procs -------------------------------------------------------------------
 //detects controls being created but not being destroyed/memory leakage
@@ -3224,19 +3523,31 @@ function mail__writemsg(x:pobject;xsubject,xdestfolder:string):boolean;
 function mail__findfield(x:pobject;const xfieldname:string;xoutput:pobject):boolean;
 function mail__findfield2(x:pobject;const xfieldname:string;xdecodelines:boolean;xoutput:pobject):boolean;
 
-//global memory procs ----------------------------------------------------------
-function global__create(xsize:comp):pointer;//19may2025
-function global__resize(xptr:pointer;xnewsize:comp):pointer;//19may2025: fixed
-procedure global__free(var xptr:pointer);
-function global__size(xptr:pointer):comp;
 
 //memory management procs ------------------------------------------------------
+
+//heap based memory
+function mem__create32(xsize:longint):pointer;//32bit
+function mem__create(xsize:comp):pointer;
+function mem__free(var xptr:pointer):boolean;//thread safe
+function mem__free2(xptr:pointer):longint;
+function mem__size(xptr:pointer):comp;//get size of memory
+function mem__resize32(xptr:pointer;xnewsize:longint):pointer;//32bit
+function mem__resize(xptr:pointer;xnewsize:comp):pointer;//thread safe - 26aug2026
+function mem__resize2(xptr:pointer;xnewsize:comp;var xoutptr:pointer):boolean;//thread safe - 26aug2026
+function mem__resize3(xptr:pointer;xnewsize:comp;xclearnewbytes:boolean;var xoutptr:pointer):boolean;//thread safe - 26aug2026
+
+//global memory
+function global__create(xsize:comp):pointer;//19may2025
+procedure global__free(var xptr:pointer);//01sep2025
+function global__size(xptr:pointer):comp;
+function global__resize(xptr:pointer;xnewsize:comp):pointer;//19may2025: fixed
+function global__resize2(xptr:pointer;xnewsize:comp;var xoutptr:pointer):boolean;//26aug2025
+
+//other
 procedure mem__newpstring(var z:pstring);//29NOV2011
 procedure mem__despstring(var z:pstring);//29NOV2011
-function mem__getmem(var p:pointer;size,xid:longint):boolean;//27apr2021, 29apr2020
-function mem__reallocmem(var p:pointer;oldsize,newsize,xid:longint):boolean;//27apr2021, 29apr2020
-function mem__reallocmemCLEAR(var p:pointer;oldsize,newsize,xid:longint):boolean;//29apr2021, 29NOV2011
-function mem__freemem(var x:pointer;oldsize,xid:longint):boolean;//27apr2021, 29apr2020
+
 
 //block memory management procs ------------------------------------------------
 //Note: These procs assume fixed memory blocks defined by "system_blocksize", typically 8192 bytes.
@@ -3250,32 +3561,27 @@ function block__new:pointer;//creates a new memory block and returns a pointer t
 procedure block__free(var x:pointer);//frees the memory block and sets the pointer to nil
 procedure block__freeb(x:pointer);//frees the memory block and does NOT flush the pointer to nil
 
-//system thread procs ----------------------------------------------------------
-//model: App hosts worker threads -> "1:many"
-//updated: 05mar2022
-procedure systhread__initall;
-function systhread__start(xstartproc:TFNThreadStartRoutine;xms:longint;xfast:comp;var xslot:longint):boolean;
-function systhread__canstop(xslot:longint):boolean;
-procedure systhread__stop(xslot:longint);
-procedure systhread__stopwait(xslot:longint);
-procedure systhread__stopall(xwait:boolean);
-function systhread__running(xslot:longint):boolean;//21nov2024
-function systhread__lag(xslot:longint):longint;
-function systhread__fast(xslot:longint):boolean;//05mar2022
-procedure systhread__setfast(xslot:longint;xre64:comp);
-//.push (host -> thread -> host)
-function systhread__pushing(xslot:longint):boolean;
-function systhread__push(xslot:longint;xcmd:longint;xdata:string;var xreplycmd:longint;var xreplydata:string):boolean;
-function systhread__pushstart(xslot:longint;xcmd:longint;xdata:string):boolean;
-function systhread__pushfinish(xslot:longint;xwait:boolean;var xreplycmd:longint;var xreplydata:string):boolean;
-//.reply (thread -> host) - reply to a host's push request -> only fires when a host sends a push request - 11oct2021
-function systhread__mustreply(xslot:longint;var xcmd:longint;var xdata:string):boolean;
-function systhread__reply(xslot:longint;xcmd:longint;xdata:string):boolean;
-//.support
-function systhread__slotOK(xslot:longint):boolean;
-procedure systhread__timerproc(uTimerID, uMsg: Integer; dwUser, dwParam1, dwParam2: longint); stdcall;
-procedure systhread__stoptimer(xslot:longint);
-procedure systhread__synclag(xslot:longint;xms64:comp);
+
+//small things support - 29aug2025 ---------------------------------------------
+
+function small__new8:tstr8;
+function small__new82(const xtext:string):tstr8;
+function small__new83(var x:tstr8;const xtext:string):boolean;
+function small__free8(x:pobject):boolean;
+
+
+//wait procs - 13sep2025 -------------------------------------------------------
+procedure wait__fortrue(var xvar:boolean;xfast:boolean);//13sep2025
+procedure wait__fortrue2(var xvar,xhalted:boolean;xfast:boolean);//13sep2025
+
+
+//filter procs -----------------------------------------------------------------
+
+function filter__sort(const xfilterlist:string):string;
+function filter__match(const xline,xmask:string):boolean;//16sep2025, 04nov2019
+function filter__matchb(const xline,xmask:string):boolean;//16sep2025, 04nov2019
+function filter__matchlist(const xline,xmasklist:string):boolean;//04oct2020
+
 
 //binary string procs ----------------------------------------------------------
 function cache__ptr(x:tobject):pobject;//09feb2024: Stores a "floating object" (a dynamically created object that is to be passed to a proc as a parameter)
@@ -3338,6 +3644,8 @@ function str__is8(x:pobject):boolean;//x is tstr8
 function str__is9(x:pobject):boolean;//x is tstr9
 function str__as8(x:pobject):tstr8;//use with care
 function str__as9(x:pobject):tstr9;//use with care
+function str__as8f(x:pobject):tstr8;//uses fallback var instead of failure - 30aug2025
+function str__as9f(x:pobject):tstr9;//uses fallback var instead of failure - 30aug2025
 //.array procs
 function str__asame2(x:pobject;xfrom:longint;const xlist:array of byte):boolean;
 function str__asame3(x:pobject;xfrom:longint;const xlist:array of byte;xcasesensitive:boolean):boolean;//20jul2024
@@ -3356,6 +3664,7 @@ function str__writeto1(x:pobject;a:pointer;asize,xfrom1,xlen:longint):boolean;
 function str__writeto1b(x:pobject;a:pointer;asize:longint;var xfrom1:longint;xlen:longint):boolean;
 function str__writeto(x:pobject;a:pointer;asize,xfrom0,xlen:longint):boolean;
 //.string procs
+function str__nullstr(x:pobject):string;//07oct2025
 function str__nextline0(xdata,xlineout:pobject;var xpos:longint):boolean;//07apr2025, 31mar2025, 17oct2018
 procedure str__stripwhitespace_lt(s:pobject);//strips leading and trailing white space - 16mar2025
 procedure str__stripwhitespace(s:pobject;xstriptrailing:boolean);
@@ -3423,7 +3732,7 @@ function bcopyarray(const x:array of byte):tstr8;
 function bnew2(var x:tstr8):boolean;//21mar2022
 function bnewlen(xlen:longint):tstr8;
 function bnewstr(const xtext:string):tstr8;
-function breuse(var x:tstr8;xtext:string):tstr8;//also acts as a pass-thru - 05jul2022
+function breuse(var x:tstr8;const xtext:string):tstr8;//also acts as a pass-thru - 24aug2025, 05jul2022
 function bnewfrom(xdata:tstr8):tstr8;
 
 //zero checkers ----------------------------------------------------------------
@@ -3437,30 +3746,50 @@ function nozero__sig(xdebugID:longint;x:single):single;
 function nozero__rel(xdebugID:longint;x:real):real;
 
 //timing procs -----------------------------------------------------------------
-//.32bit mintue timer
-function mn32:longint;//32bit minute timer - 08jan2024
+
+//.32bit mintue counter
+function mn32:longint;//32 bit minute timer - 08jan2024
 function nowmin:longint;//03mar2022
-//.64bit high res. millisecond timer
-function ms64:comp;//64bit millisecond system timer, 01-SEP-2006
+
+//.64bit high-res counter
+function ns64:comp;//64 bit nanosecond counter
+
+function ms64:comp;//64 bit millisecond counter
 function ms64str:string;//06NOV2010
-//.64bit high res. millisecond relative timer -> allows time shifting
-function msr64:comp;//relative 64bit millisecond system timer - 20feb2021
+
+function fastms64:comp;//07sep2025
+function fastms64str:string;
+
+function slowms64:comp;//slower, less demanding version of ms64 - 14sep2025, 31aug2025
+function slowms64str:string;//slower, less demanding version of ms64 - 14sep2025, 31aug2025
+
+//.64bit high-res relative counter -> permits time shifting
+function msr64:comp;//64 bit millisecond relative counter - 20feb2021
 function msr64str:string;//20feb2021
+
 procedure low__setmsr64(xnewtime64:comp;xnewspeed:longint);
+
 function msok(var xref:comp):boolean;//timer reference has expired
 function msset(var xref:comp;xdelay:comp):boolean;//restart timer reference with supplied delay
 function mswaiting(var xref:comp):boolean;//timer reference has not yet expired (still waiting to expire)
 
+
 //simple message procs ---------------------------------------------------------
-function showtext(const x:string):boolean;//12jun2025
+
+function showhandle:longint;
+function showquery(const x:string):boolean;//03oct2025
 function showbasic(const x:string):boolean;//18jun2025
-function showbasic2(const x:string;xsec:longint):boolean;//26apr2025
+function showtext(const x:string):boolean;//12jun2025
+function showtext2(const x:string;xsec:longint):boolean;//26apr2025
 function showlow(const x:string):boolean;
 function showerror(const x:string):boolean;
 function showerror2(const x:string;xsec:longint):boolean;
 
+
 //date and time procs ----------------------------------------------------------
-function low__uptime(x:comp;xforcehr,xforcemin,xforcesec,xshowsec,xshowms:boolean;xsep:string):string;//28apr2024: changed 'dy' to 'd', 01apr2024: xforcesec, xshowsec/xshowms pos swapped, fixed - 09feb2024, 27dec2021, fixed 10mar2021, 22feb2021, 22jun2018, 03MAY2011, 07SEP2007
+
+function low__uptime(x:comp;xforcehr,xforcemin,xforcesec,xshowsec,xshowms:boolean;const xsep:string):string;//28apr2024: changed 'dy' to 'd', 01apr2024: xforcesec, xshowsec/xshowms pos swapped, fixed - 09feb2024, 27dec2021, fixed 10mar2021, 22feb2021, 22jun2018, 03MAY2011, 07SEP2007
+function low__uptime2(x:comp;xforcehr,xforcemin,xforcesec,xshowsec,xshowms:boolean;const xsep,xsep2:string):string;//15aug2025
 function low__monthdayfilter0(xdayOfmonth,xmonth,xyear:longint):longint;
 function low__monthdaycount0(xmonth,xyear:longint):longint;
 function low__year(xmin:longint):longint;
@@ -3490,11 +3819,12 @@ function low__month0(x:longint;xfullname:boolean):string;//08mar2022
 function low__weekday1(x:longint;xfullname:boolean):string;//08mar2022
 function low__weekday0(x:longint;xfullname:boolean):string;//08mar2022
 function low__datestr(xdate:tdatetime;xformat:longint;xfullname:boolean):string;//09mar2022
+function low__timestr(xdate:tdatetime;xformat:longint):string;//29sep2025
 function low__leapyear(xyear:longint):boolean;
 function low__datetoday(x:tdatetime):longint;
 function low__datetosec(x:tdatetime):comp;
 function low__date1(xyear,xmonth1,xday1:longint;xformat:longint;xfullname:boolean):string;
-function low__date0(xyear,xmonth,xday:longint;xformat:longint;xfullname:boolean):string;
+function low__date0(xyear,xmonth,xday:longint;xformat:longint;xfullname:boolean):string;//03sep2025
 function low__time0(xhour,xminute:longint;xsep,xsep2:string;xuppercase,xshow24:boolean):string;
 function low__hour0(xhour:longint;xsep:string;xuppercase,xshowAMPM,xshow24:boolean):string;
 
@@ -3514,8 +3844,25 @@ function date__timestamptodatetime(const timestamp:ttimestamp):tdatetime;
 //string procs -----------------------------------------------------------------
 function low__lcolumn(const x:string;xmaxwidth:longint):string;//left aligned column - 09apr2024
 function low__rcolumn(const x:string;xmaxwidth:longint):string;//right aligned column - 09apr2024
-function hex8__int4(const x:string):longint;//19may2025
-function int4__hex8(const x:longint):string;//19may2025
+
+//.16bit
+function hex4__int2(const x:string):word;//26aug2025
+function int2__hex4(const x:longint):string;//26aug2025
+function hex4__int2RL(const x:string):word;//26aug2025
+function int2__hex4RL(const x:longint):string;//26aug2025
+
+//.32bit
+function hex8__int4(const x:string):longint;//26aug2025
+function int4__hex8(const x:longint):string;//26aug2025
+function hex8__int4RL(const x:string):longint;//26aug2025
+function int4__hex8RL(const x:longint):string;//26aug2025
+
+//.64bit
+function int8__hex16(const x:comp):string;//26aug2025
+function hex16__int8(const x:string):comp;//26aug2025
+function int8__hex16RL(const x:comp):string;//26aug2025
+function hex16__int8RL(const x:string):comp;//26aug2025
+
 function low__hexchar(x:byte):char;
 function low__hex(x:byte):string;
 function low__hexchar_lowercase(x:byte):char;//02jan2025
@@ -3528,8 +3875,6 @@ function low__ref256(const x:string):comp;//01may2025: never 0 for valid input, 
 function low__ref256U(const x:string):comp;//01may2025: never 0 for valid input, 28dec2023
 function low__nextline0(xdata,xlineout:tstr8;var xpos:longint):boolean;//31mar2025, 17oct2018
 function low__nextline1(const xdata:string;var xlineout:string;xdatalen:longint;var xpos:longint):boolean;//31mar2025, 20mar2025, 17oct2018
-function low__matchmask(const xline,xmask:string):boolean;//04nov2019
-function low__matchmasklist(const xline,xmasklist:string):boolean;//04oct2020
 //.size
 function low__size(x:comp;xstyle:string;xpoints:longint;xsym:boolean):string;//01apr2024:plus support, 10feb2024: created
 function low__bDOT(x:comp;sym:boolean):string;
@@ -3584,6 +3929,7 @@ function low__even(x:longint):boolean;
 procedure low__msb16(var s:word);//most significant bit first - 22JAN2011
 procedure low__msb32(var s:longint);//most significant bit first - 22JAN2011
 
+function strm(const sfullname,spartialname:string;var vs:string;var v:longint):boolean;//05oct2025
 function strlow(const x:string):string;//make string lowercase - 26apr2025
 function strup(const x:string):string;//make string uppercase - 26apr2025
 function strmatch(const a,b:string):boolean;//01may2025, 26apr2025
@@ -3601,7 +3947,7 @@ function stripwhitespace_lt(const x:string):string;//strips leading and trailing
 function stripwhitespace(const x:string;xstriptrailing:boolean):string;
 procedure striptrailingrcodes(var x:string);
 function striptrailingrcodesb(const x:string):string;
-function freeobj(x:pobject):boolean;//22jun2024: Updated for GUI support, 09feb2024: Added support for "._rtmp" & mustnil, 02feb2021, 05may2020, 05DEC2011, 14JAN2011, 15OCT2004
+function freeobj(x:pobject):boolean;//01sep2025, 22jun2024: Updated for GUI support, 09feb2024: Added support for "._rtmp" & mustnil, 02feb2021, 05may2020, 05DEC2011, 14JAN2011, 15OCT2004
 
 function math__power32(xvalue:extended;xtothepowerof:longint):extended;
 
@@ -3609,6 +3955,7 @@ function mult64(xval,xval2:comp):comp;//multiply
 function add64(xval,xval2:comp):comp;//add
 function sub64(xval,xval2:comp):comp;//subtract
 function div64(xval,xdivby:comp):comp;//28dec2021, this proc performs proper "comp division" -> fixes Delphi's "comp" division error -> which raises POINTER EXCEPTION and MEMORY ERRORS when used at speed and repeatedly - 13jul2021, 19apr2021
+function add32(xval,xval2:comp):longint;//01sep2025
 function sub32(xval,xval2:comp):longint;//30sep2022, subtract
 function div32(xval,xdivby:comp):longint;//proper "comp division" - 19apr2021
 function pert32(xval,xlimit:comp):longint;
@@ -3648,6 +3995,7 @@ function strbyte1(const x:string;xpos:longint):byte;//1based always -> backward 
 procedure strdef(var x:string;const xdef:string);//set new value, default to "xdef" if xnew is nil
 function strdefb(const x,xdef:string):string;
 function low__setlen(var x:string;xlen:longint):boolean;
+function low__setlen0(var x:string;xlen:longint):boolean;//clears memory to #0 - 23aug2025
 function low__len(const x:string):longint;//05dec2024
 function pchar__strlen(str:pchar):cardinal;//01may2025
 function floattostrex2(x:extended):string;//19DEC2007
@@ -3672,6 +4020,8 @@ function printer__count:longint;
 function printer__find(xindex:longint;var xname,xservname:string;var xattr,xdevicetimeout,xretrytimeout:longint;var xdefaultprinter:boolean):boolean;
 
 //font procs -------------------------------------------------------------------
+function font__size(xfontheight:longint):longint;//04sep2025
+function font__size2(xfontheight:longint):double;
 procedure font__list(x:pobject);//26mar2022
 procedure font__list2(x:pobject;xscreen,xprinter,xspecial:boolean);//26mar2022
 function font__initscreen(xupdatelist:boolean):boolean;
@@ -3742,6 +4092,7 @@ function app__folder3(xsubfolder:string;xcreate,xalongsideexe:boolean):string;//
 function app__subfolder(xsubfolder:string):string;
 function app__subfolder2(xsubfolder:string;xalongsideexe:boolean):string;
 function app__settingsfile(xname:string):string;
+function app__settingsfile2(xname:string;xcreatefolder:boolean):string;//23oct2025
 //.settings
 //..load+save
 function app__loadsettings:boolean;
@@ -3762,10 +4113,6 @@ function app__bvalset(xname:string;xval:boolean):boolean;
 function app__ivalset(xname:string;xval:longint):longint;
 function app__cvalset(xname:string;xval:comp):comp;
 function app__svalset(xname,xval:string):string;
-//.memory
-function mem__alloc(xsize:longint):pointer;
-function mem__realloc(xptr:pointer;xsize:longint):pointer;
-function mem__free(xptr:pointer):boolean;
 //.run
 //xxxxxxxxxxxxxxxxxxxx//66666666666666666666
 function app__adminlevel:boolean;
@@ -3775,12 +4122,12 @@ procedure app__pause(x:boolean);
 function app__runstyle:longint;//04mar2024
 function app__guimode:boolean;
 procedure app__install_uninstall;
-procedure app__makeDPIaware;//to be called ONLY from within "app__boot" proc - 27nov2024
-procedure app__boot(xEventDriven,xFileCache,xGUImode:boolean);
+function app__GUIresources:longint;//27aug2025
+procedure app__boot(xEventDriven,xFileCache,xGUImode:boolean);//28sep2025, 19aug2025
 procedure app__checkvars;//04may2025, 29jan2025
 function app__valuedefaults(xname:string):string;//08aug2025
 procedure app__checkCompilerOptionsForMaxSpeed;//15jul2025
-procedure app__run;//run - 17jun2025, 19aug2024: adjust GUI start position
+procedure app__run;//run - 07sep2025, 17jun2025, 19aug2024: adjust GUI start position
 function app__running:boolean;
 procedure app__startclose;//07jul2025
 procedure app__halt;//25jul2025
@@ -3904,8 +4251,8 @@ function frcrange32(x,min,max:longint):longint;
 function frcminD64(x,min:double):double;//05jul2025
 function frcmaxD64(x,max:double):double;
 function frcrangeD64(x,min,max:double):double;
-function to32bit(x:string):longint;//21jun2024, 29AUG2007
-function from32bit(x:longint):string;//21jun2024, 29AUG2007
+function str__to32(const x:string):longint;//02oct2025, 21jun2024, 29AUG2007
+function str__from32(x:longint):string;//02oct2025, 21jun2024, 29AUG2007
 function frcrange2(var x:longint;xmin,xmax:longint):boolean;//29apr2020
 function smallest32(a,b:longint):longint;
 function largest32(a,b:longint):longint;
@@ -3932,6 +4279,10 @@ procedure inc32(var x:longint;xby:longint);
 procedure dec32(var x:longint;xby:longint);
 procedure inc64(var x:comp;xby:comp);
 procedure dec64(var x:comp;xby:comp);
+procedure inc132(var x:longint);//inc by 1 - 30aug2025
+procedure dec132(var x:longint);
+procedure inc164(var x:comp);
+procedure dec164(var x:comp);
 function int__tostr(x:extended):string;
 function int__fromstr(x:string):comp;
 function int__byteX(xindex,x:longint):byte;
@@ -3960,7 +4311,7 @@ function low__digpad11(v,s:longint):string;//1 -> 01
 function nilrect:twinrect;
 function nilarea:twinrect;//25jul2021
 function maxarea:twinrect;//02dec2023, 27jul2021
-function noarea:twinrect;//sets area to maximum inverse values - 19nov2023
+function noarea:twinrect;//sets area to maximum inverse values - 28aug2025, 19nov2023
 function validrect(x:twinrect):boolean;
 function validarea(x:twinrect):boolean;//26jul2021
 function low__shiftarea(xarea:twinrect;xshiftx,xshifty:longint):twinrect;//always shift
@@ -3969,23 +4320,24 @@ function low__areawithinrect(x,xnew:twinrect):boolean;//12jan2025
 
 procedure area__simplifyoverlapping(var slist:array of twinrect;var scount:longint);//04feb2025
 function area__nil:twinrect;
-function area__valid(x:twinrect):boolean;//09may2025
+function area__valid(const x:twinrect):boolean;//09may2025
 function area__equal(const x,y:twinrect):boolean;//26jul2025
-function area__make(xleft,xtop,xright,xbottom:longint):twinrect;
-function area__makewh(xleft,xtop,xwidth,xheight:longint):twinrect;//28jul2025
+function area__make(const xleft,xtop,xright,xbottom:longint):twinrect;
+function area__makewh(const xleft,xtop,xwidth,xheight:longint):twinrect;//28jul2025
 function area__clip(clip_rect,s:twinrect):twinrect;//21nov2023
-function area__grow(x:twinrect;xby:longint):twinrect;//07apr2021
-function area__grow2(x:twinrect;xby,yby:longint):twinrect;//14jul2025
-function area__str(x:twinrect):string;
-function area__within(z:twinrect;x,y:longint):boolean;
-function area__within2(z:twinrect;xy:tpoint):boolean;
+function area__grow(const x:twinrect;const xby:longint):twinrect;//07apr2021
+function area__grow2(const x:twinrect;const xby,yby:longint):twinrect;//14jul2025
+function area__str(const x:twinrect):string;
+function area__within(const z:twinrect;const x,y:longint):boolean;
+function area__within2(const z:twinrect;const xy:tpoint):boolean;
 
-function low__point(x,y:longint):tpoint;//09apr2024
+function low__point(const x,y:longint):tpoint;//09apr2024
 
 
 //logic procs ------------------------------------------------------------------
 function low__setstr(var xdata:string;xnewvalue:string):boolean;
 function low__setcmp(var xdata:comp;xnewvalue:comp):boolean;//10mar2021
+function low__setdbl(var xdata:double;xnewvalue:double):boolean;//01sep2025
 function low__setint(var xdata:longint;xnewvalue:longint):boolean;
 function low__setbyt(var xdata:byte;xnewvalue:byte):boolean;//01feb2025
 function low__setbol(var xdata:boolean;xnewvalue:boolean):boolean;
@@ -3998,6 +4350,7 @@ function low__insint(x:longint;y:boolean):longint;
 function low__inscmp(x:comp;y:boolean):comp;//28dec2023
 function low__insd64(x:double;y:boolean):double;//06jul2025
 function low__aorb(a,b:longint;xuseb:boolean):longint;
+function low__aorbD64(a,b:double;xuseb:boolean):double;//04sep2025
 function low__aorbcomp(a,b:comp;xuseb:boolean):comp;//19feb2024
 
 function low__aorb32(a,b:longint;xuseb:boolean):longint;//27aug2024
@@ -4052,6 +4405,9 @@ function low__or3(v1,v2,v3:boolean):boolean;//only one must be TRUE to return TR
 
 
 //crc32 support ----------------------------------------------------------------
+function crc32__createseed(var x:tseedcrc32;xseed:longint):boolean;//21aug2025
+function crc32__encode(var x:tseedcrc32;xdata:tstr8):longint;//21aug2025
+
 procedure low__initcrc32;
 procedure low__crc32inc(var _crc32:longint;x:byte);//23may2020, 31-DEC-2006
 procedure low__crc32(var _crc32:longint;x:tstr8;s,f:longint);//27mar2007: updated, 31dec2006
@@ -4065,19 +4421,33 @@ function low__crc32seedable(x:tstr8;xseed:longint):longint;//14jan2018
 procedure runLOW(fDOC,fPARMS:string);//stress tested on Win98/WinXP - 27NOV2011, 06JAN2011
 
 
+//resource support proces ------------------------------------------------------
+function res__listenglish__langcode(xindex:longint;var xlabel:string;var xlangcode:longint):boolean;
+function res__listenglish__langcode2(xindex:longint;var xcaption,xlabel:string;var xlangcode:longint):boolean;
+function res__findlangcode(xname:string):longint;
+function res__findlangname(xcode:longint):string;
+function res__findlanginfo(const scode:longint;var xcaption,xlabel:string;var xcode,xindex:longint):boolean;//14sep2025
+
+
+//object procs -----------------------------------------------------------------
+function obj__readitem(xdata:pobject;var xpos:integer;var xname:string;xvalue:pobject;var xvalue32:integer;var xusevalue32:boolean):boolean;
+
+
 //compression procs (standard ZIP - 26jan2021) ---------------------------------
 function low__compress(x:pobject):boolean;
 function low__decompress(x:pobject):boolean;
 
-//.PkZIP Archive Support - 10feb2023 - v1.00.033 -------------------------------
+//.PkZIP Archive Support -------------------------------------------------------
 function zip__refOK(xdata,xlist:tstr8):boolean;
 function zip__start(xdata,xlist:tstr8):boolean;
 function zip__stop(xdata,xlist:tstr8):boolean;
 function zip__add(xdata,xlist:tstr8;sname:string;sdata:tstr8):boolean;
-function zip__add2(xdata,xlist:tstr8;const sname:string;var sdata:string):boolean;
-function zip__add3(xdata,xlist:tstr8;const sname,sdata:string):boolean;
+function zip__add2(xdata,xlist:tstr8;sname:string;sdata:tstr8;xstoreonly:boolean):boolean;
+function zip__addstr(xdata,xlist:tstr8;const sname,sdata:string):boolean;//24aug2025
+function zip__shouldstore(sdata:tstr8):boolean;//23aug2025
 function zip__addfromfile(xdata,xlist:tstr8;const sfilename:string):boolean;
 function zip__addfromfile2(xdata,xlist:tstr8;srootfolder,sfilename:string):boolean;
+function zip__addfromfile21(xdata,xlist:tstr8;srootfolder,sfilename:string;xstoreonly:boolean):boolean;//23aug2025
 function zip__addfromfolder(xdata,xlist:tstr8;const xfolder,xmasklist,xemasklist:string):boolean;
 function zip__addfromfolder2(xdata,xlist:tstr8;xfolder:string;const xmasklist,xemasklist:string;xinclude_subfolders:boolean):boolean;
 
@@ -4165,12 +4535,28 @@ procedure backmask__exclude(var s:byte);
 
 
 //inputcolorise support --------------------------------------------------------
-function inputcolorise__backcolor(var x:tinputcolorise;xstrength01:single;xinputlen,xguibackcolor:longint):longint;
+function inputcolorise__backcolor(var x:tinputcolorise;xstrength01:single;xinputlen,xguibackcolor:longint):longint;//06nov2025, 21aug2025
 
 
 //gui support ------------------------------------------------------------------
 function gui__vimultimonitor:boolean;
 function gui__sysprogram_monitorindex:longint;
+
+
+//dialog procs -----------------------------------------------------------------
+
+function dialog__color(var xcolor:longint):boolean;//08oct2025
+function dialog__mask(const xlabel,xmasklist:string):string;
+
+function dialog__open(var xfilename,xfilterlist:string):boolean;//10oct2025
+function dialog__open2(var xfilename,xfilterlist:string;const xtitle:string):boolean;//10oct2025
+
+function dialog__save(var xfilename,xfilterlist:string):boolean;//10oct2025
+function dialog__save2(var xfilename,xfilterlist:string;const xtitle:string):boolean;//10oct2025
+
+//.support
+function dialog__readfilter(const xfilterlist:string;var xindex:longint;var xdefext,xlist:string):boolean;//10oct2025
+function dialog__updateFilterList(var xfilterlist:string;const dindex:longint):boolean;//10oct2025
 
 
 implementation
@@ -4193,7 +4579,7 @@ end;
 
 
 //inputcolorise support --------------------------------------------------------
-function inputcolorise__backcolor(var x:tinputcolorise;xstrength01:single;xinputlen,xguibackcolor:longint):longint;
+function inputcolorise__backcolor(var x:tinputcolorise;xstrength01:single;xinputlen,xguibackcolor:longint):longint;//06nov2025, 21aug2025
 begin
 //defaults
 result:=xguibackcolor;
@@ -4201,11 +4587,308 @@ result:=xguibackcolor;
 //get
 if x.use then
    begin
-   case (xinputlen>=x.minlen) of
-   true:if (x.backTRUE <>clnone) then result:=int__splice24(xstrength01,xguibackcolor,x.backTRUE);
-   else if (x.backFALSE<>clnone) then result:=int__splice24(xstrength01,xguibackcolor,x.backFALSE);
+
+   case x.code of
+   icNone  :;
+   icTrue  :if (x.backTRUE <>clnone) then result:=int__splice24(xstrength01,xguibackcolor,x.backTRUE);
+   icFalse :if (x.backFALSE<>clnone) then result:=int__splice24(xstrength01,xguibackcolor,x.backFALSE);
+   icMinLen:begin//06nov2025
+
+      case (xinputlen>=x.minlen) of
+      true:if (x.backTRUE <>clnone) then result:=int__splice24(xstrength01,xguibackcolor,x.backTRUE);
+      else if (x.backFALSE<>clnone) then result:=int__splice24(xstrength01,xguibackcolor,x.backFALSE);
+      end;//case
+
+      end;
+
    end;//case
+
    end;
+
+end;
+
+
+//dialog procs -----------------------------------------------------------------
+
+function dialog__mask(const xlabel,xmasklist:string):string;
+begin
+
+case (xmasklist<>'') of
+true:result:=xlabel+' ('+xmasklist+')'+#0+xmasklist+#0;
+else result:='';
+end;//case
+
+end;
+
+function dialog__color(var xcolor:longint):boolean;//08oct2025
+var
+   z:tchoosecolor;
+begin
+
+//defaults
+result :=false;
+
+try
+//init
+low__cls(@z,sizeof(z));
+
+z.lStructSize    :=sizeof(z);
+z.hWndOwner      :=app__activehandle;//required -> tracks which monitor to display on - 06oct2025
+z.flags          :=CC_RGBINIT or CC_FULLOPEN or CC_ANYCOLOR;
+z.rgbResult      :=xcolor;
+z.lpCustColors   :=@system_coldlg_clist;
+
+//get
+result:=win____ChooseColor(z);
+if result then xcolor:=z.rgbResult;
+
+except;end;
+end;
+
+function dialog__open(var xfilename,xfilterlist:string):boolean;//10oct2025
+begin
+result:=dialog__open2(xfilename,xfilterlist,'');
+end;
+
+function dialog__open2(var xfilename,xfilterlist:string;const xtitle:string):boolean;//10oct2025
+var
+   a:tobject;
+   dinitfolder,dext,dlist:string;
+   p,dindex:longint;
+   derror:boolean;
+   z:topenfilename;
+   zfilename:tstr8;
+
+begin
+
+//defaults
+result            :=false;
+a                 :=nil;
+derror            :=false;
+zfilename         :=nil;
+
+try
+//folder fallback
+dinitfolder:=io__extractfilepath(xfilename);
+if not io__folderexists(dinitfolder) then dinitfolder:=io__extractfilepath(io__exename);
+if not io__folderexists(dinitfolder) then dinitfolder:=io__windrive;
+
+
+//init
+dialog__readfilter(xfilterlist,dindex,dext,dlist);
+if (dlist='') then dlist:=#0#0#0 else dlist:=dlist+#0;
+
+low__cls(@z,sizeof(z));
+
+zfilename         :=str__new8;
+zfilename.setlen(1+max16);
+zfilename.fill(0,zfilename.len-1,0);//fill with null chars
+
+z.lStructSize     :=sizeof(z);
+z.hWndOwner       :=app__activeHandle;//required -> tracks which monitor to display on - 06oct2025
+z.lpstrFile       :=zfilename.core;
+z.nMaxFile        :=zfilename.len;
+z.flags           :=OFN_PATHMUSTEXIST or OFN_FILEMUSTEXIST or OFN_LONGNAMES or OFN_HIDEREADONLY;
+z.lpstrFilter     :=pchar(dlist);
+z.nFilterIndex    :=dindex;
+z.lpstrInitialDir :=pchar(dinitfolder);
+z.lpstrDefExt     :=pchar(dext);
+
+if (xtitle<>'') then z.lpstrTitle:=pchar(xtitle);
+
+//get
+result:=win____GetOpenFileName(z);
+
+if result then
+   begin
+
+   //get filename
+   xfilename:=str__nullstr(@zfilename);
+
+   //update filterlist to include the "filterIndex" used by user -> remembered for next time
+   dialog__updateFilterList(xfilterlist,z.nFilterIndex);
+
+   end;
+   
+except;derror:=true;end;
+
+//free
+freeobj(@zfilename);
+
+end;
+
+function dialog__save(var xfilename,xfilterlist:string):boolean;//10oct2025
+begin
+result:=dialog__save2(xfilename,xfilterlist,'');
+end;
+
+function dialog__save2(var xfilename,xfilterlist:string;const xtitle:string):boolean;//10oct2025
+label
+   redo;
+var
+   a:tobject;
+   dinitfolder,dext,dlist:string;
+   p,dindex:longint;
+   derror:boolean;
+   z:topenfilename;
+   zfilename:tstr8;
+
+begin
+
+//defaults
+result            :=false;
+a                 :=nil;
+derror            :=false;
+zfilename         :=nil;
+
+redo:
+try
+//folder fallback
+dinitfolder:=io__extractfilepath(xfilename);
+if not io__folderexists(dinitfolder) then dinitfolder:=io__extractfilepath(io__exename);
+if not io__folderexists(dinitfolder) then dinitfolder:=io__windrive;
+
+
+//init
+dialog__readfilter(xfilterlist,dindex,dext,dlist);
+if (dlist='') then dlist:=#0#0#0 else dlist:=dlist+#0;
+
+low__cls(@z,sizeof(z));
+
+zfilename         :=str__new8;
+zfilename.setlen(1+max16);
+zfilename.fill(0,zfilename.len-1,0);//fill with null chars
+
+for p:=1 to frcmax32(low__len(xfilename),zfilename.len-2) do zfilename.pbytes[p-1]:=byte(xfilename[p-1+stroffset]);
+
+z.lStructSize     :=sizeof(z);
+z.hWndOwner       :=app__activeHandle;//required -> tracks which monitor to display on - 06oct2025
+z.lpstrFile       :=zfilename.core;
+z.nMaxFile        :=zfilename.len;
+z.flags           :=OFN_PATHMUSTEXIST or OFN_LONGNAMES or OFN_HIDEREADONLY;
+z.lpstrFilter     :=pchar(dlist);
+z.nFilterIndex    :=dindex;
+z.lpstrInitialDir :=pchar(dinitfolder);
+z.lpstrDefExt     :=pchar(dext);
+
+if (xtitle<>'') then z.lpstrTitle:=pchar(xtitle);
+
+//get
+result:=win____GetSaveFileName(z);
+
+if result then
+   begin
+
+   //get filename
+   xfilename:=str__nullstr(@zfilename);
+
+   //update filterlist to include the "filterIndex" used by user -> remembered for next time
+   dialog__updateFilterList(xfilterlist,z.nFilterIndex);
+
+   //enforce filter file extension
+   dialog__readfilter(xfilterlist,dindex,dext,dlist);
+
+   if (dext<>'') and (not strmatch(dext,io__readfileext(xfilename,false))) then xfilename:=xfilename+'.'+dext;
+
+   end;
+
+except;derror:=true;end;
+
+//free
+freeobj(@zfilename);
+
+//prompt replace
+if result and io__fileexists(xfilename) then
+   begin
+
+   if not showquery( io__extractfilename(xfilename) + rcode + rcode + translate('Replace existing file?') ) then goto redo;
+
+   end;
+
+end;
+
+function dialog__readfilter(const xfilterlist:string;var xindex:longint;var xdefext,xlist:string):boolean;//10oct2025
+label
+   redo;
+
+const
+   xsep=#0;
+
+var
+   vlen,findex,dcount,p,p2:longint;
+   str1:string;
+   donce:boolean;
+
+   function v(const xindex:longint):char;
+   begin
+   if (xindex<1) or (xindex>vlen) then result:=xsep else result:=xlist[xindex-1+stroffset];
+   end;
+
+begin
+
+//pass-thru
+result        :=true;
+donce         :=true;
+dcount        :=0;
+findex        :=1;
+xindex        :=1;
+xdefext       :='';
+xlist         :=xfilterlist;
+
+//find "xindex" value
+if low__splitstr(xfilterlist,ssQuestion,str1,xlist) then xindex:=frcmin32(strint32(str1),1);
+
+//extract default extension from filterlist -> over allow by +1
+vlen          :=low__len(xlist);
+findex        :=xindex;
+
+redo:
+
+for p:=1 to (vlen+1) do if (v(p)=xsep) then
+   begin
+   inc(dcount);
+   if ( (2*findex) = dcount ) then
+      begin
+
+      for p2:=p downto 1 do if (v(p2)='.') or (v(p2)='*') or (v(p2)=')') then
+         begin
+
+         xdefext:=strcopy1(xlist,p2+1,p-p2-1);
+         break;
+
+         end;//p2
+
+      break;
+
+      end;
+
+   end;//p
+
+//we have no "defext" so use first extension
+if ((xdefext='') or (xdefext='*') or (xdefext='*.*')) and donce then
+   begin
+
+   donce    :=false;
+   dcount   :=0;
+   findex   :=1;
+   goto     redo;
+
+   end;
+
+end;
+
+function dialog__updateFilterList(var xfilterlist:string;const dindex:longint):boolean;
+var
+   xindex:longint;
+   xdefext,xlist:string;
+begin
+
+//pass-thru
+result:=true;
+
+dialog__readfilter(xfilterlist,xindex,xdefext,xlist);
+xfilterlist:=intstr32(frcmin32(dindex,1))+'?'+xlist;
+
 end;
 
 
@@ -4340,7 +5023,7 @@ a:=str__new8;
 a.minlen(2048);
 asize:=a.len;
 
-if dwin____GetDefaultPrinter(a.core,asize) then result:=pchar(a.core);
+if win____GetDefaultPrinter(a.core,asize) then result:=pchar(a.core);
 except;end;
 //free
 str__free(@a);
@@ -4397,14 +5080,14 @@ else
 
 //get
 xcount:=0;
-dwin____EnumPrinters(xflags,nil,xlevel,nil,0,xcount,xlistcount);
+win____EnumPrinters(xflags,nil,xlevel,nil,0,xcount,xlistcount);
 if (xcount<=0) then goto skipend;
 
 a:=str__new8;
 a.minlen(xcount);
 
 //set
-if not dwin____EnumPrinters(xflags, nil,xlevel,a.core,xcount,xcount,xlistcount) then goto skipend;
+if not win____EnumPrinters(xflags, nil,xlevel,a.core,xcount,xcount,xlistcount) then goto skipend;
 
 //.update list
 for p:=0 to (xlistcount-1) do
@@ -4474,6 +5157,20 @@ end;
 
 
 //font procs -------------------------------------------------------------------
+
+function font__size(xfontheight:longint):longint;//04sep2025
+begin
+result:=round(font__size2(xfontheight));
+end;
+
+function font__size2(xfontheight:longint):double;
+begin
+
+if (xfontheight<0) then xfontheight:=-xfontheight;
+result:=frcminD64((72*xfontheight)/frcmin32(system_screenlogpixels,1),1);
+
+end;
+
 procedure font__list(x:pobject);//26mar2022
 begin
 font__list2(x,true,true,false);
@@ -4814,6 +5511,7 @@ result:=tfastvars.create;
 end;
 
 //start-stop procs -------------------------------------------------------------
+
 procedure gossroot__start;
 var
    xver:tosversioninfo;
@@ -4823,6 +5521,7 @@ try
 if system_started then exit else system_started:=true;
 
 //os version info
+low__cls(@xver,sizeof(xver));//02oct2025
 xver.dwOSVersionInfoSize:=sizeof(xver);
 if win____GetVersionEx(xver) then
    begin
@@ -4831,14 +5530,27 @@ if win____GetVersionEx(xver) then
    system_osminver :=xver.dwMinorVersion;
    system_osbuild  :=xver.dwBuildNumber;
    system_osstr    :=intstr32(system_osid)+'.'+intstr32(system_osmajver)+'.'+intstr32(system_osminver)+'.'+intstr32(system_osbuild);
-   system_osWin98  :=(system_osmajver<=4);//Windows95..98..ME = v4.*
+   system_osWin9X  :=(system_osmajver<=4);//Windows95..98..ME = v4.*
    end;
+
+
+//small and fast support -------------------------------------------------------
+low__cls(@system_small_use8,sizeof(system_small_use8));
+low__cls(@system_small_str8,sizeof(system_small_str8));
+
+
+//color dialog -----------------------------------------------------------------
+low__cls(@system_coldlg_clist,sizeof(system_coldlg_clist));
+
 except;end;
 end;
 
 procedure gossroot__stop;
+var
+   p:longint;
 begin
 try
+
 //check
 if not system_started then exit else system_started:=false;
 
@@ -4854,8 +5566,147 @@ freeobj(@system_printerserv);
 freeobj(@system_printerattr);
 freeobj(@system_printer_devicetimeout);
 freeobj(@system_printer_retrytimeout);
+
+//.system_small_strs
+for p:=0 to high(system_small_str8) do str__free(@system_small_str8[p]);
+
+//.fallback vars
+freeobj(@system_root_str8);
+freeobj(@system_root_str9);
+
 except;end;
 end;
+
+function small__new8:tstr8;
+begin
+small__new83(result,'');
+end;
+
+function small__new82(const xtext:string):tstr8;
+begin
+small__new83(result,xtext);
+end;
+
+function small__new83(var x:tstr8;const xtext:string):boolean;
+var
+   p:longint;
+begin
+
+//defaults
+result :=false;
+x      :=nil;
+
+//get
+for p:=0 to high(system_small_str8) do if not system_small_use8[p] then
+   begin
+
+   //track
+   track__inc(satSmall8,1);
+
+   //mark in use
+   system_small_use8[p]:=true;
+
+   //init
+   if (system_small_str8[p]=nil) then
+      begin
+
+      system_small_str8[p]:=str__new8;
+      system_small_str8[p].floatsize:=5000;
+
+      //keep locked so no procs close it by mistake
+      str__lock(@system_small_str8[p]);
+
+      end;
+
+   //get
+   result :=true;
+   x      :=system_small_str8[p];
+
+   if (xtext<>'') then x.text:=xtext;
+
+   //stop
+   break;
+
+   end;//p
+
+//fallback
+if not result then
+   begin
+
+   result       :=true;
+   x            :=str__new8;
+   x.text       :=xtext;
+   x.floatsize  :=5000;
+
+   end;
+
+end;
+
+function small__free8(x:pobject):boolean;
+var
+   p:longint;
+begin
+
+//pass-thru
+result:=true;
+
+//check
+if not str__ok(x) then exit;
+
+//get
+for p:=0 to high(system_small_str8) do if (x^=system_small_str8[p]) then
+   begin
+
+   //reset
+   system_small_str8[p].floatsize:=5000;
+   system_small_str8[p].setlen(0);
+
+   //clear caller's pointer
+   x^:=nil;
+
+   //mark not in use
+   system_small_use8[p]:=false;
+
+   //track
+   track__inc(satSmall8,-1);
+
+   //stop
+   break;
+
+   end;
+
+//fallback
+if str__ok(x) then freeobj(x);
+
+end;
+
+
+//wait procs -------------------------------------------------------------------
+
+procedure wait__fortrue(var xvar:boolean;xfast:boolean);//13sep2025
+var
+   xref :comp;
+begin
+
+//flatout check speed for first 500 ms, then throttle back to 66x/sec (~15 ms)
+xref  :=add64(ms64,500);
+
+while (not xvar) do if xfast then xfast:=(xref>=ms64) else win____sleep(1);
+
+end;
+
+procedure wait__fortrue2(var xvar,xhalted:boolean;xfast:boolean);//13sep2025
+var
+   xref :comp;
+begin
+
+//flatout check speed for first 500 ms, then throttle back to 66x/sec (~15 ms)
+xref  :=add64(ms64,500);
+
+while (not xvar) and (not xhalted) do if xfast then xfast:=(xref>=ms64) else win____sleep(1);
+
+end;
+
 
 //info procs -------------------------------------------------------------------
 function app__info(xname:string):string;
@@ -4886,8 +5737,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,9)='gossroot.') then strdel1(xname,1,9) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.5316'
-else if (xname='date')       then result:='10aug2025'
+if      (xname='ver')        then result:='4.00.6386'
+else if (xname='date')       then result:='06nov2025'
 else if (xname='name')       then result:='Root'
 else if (xname='mode.int')   then result:=intstr32(info__mode)
 else if (xname='mode')       then
@@ -4982,6 +5833,7 @@ if (result='') then
       vbuildno(app__info('gossimg.ver'))+
       vbuildno(app__info('gossnet.ver'))+
       vbuildno(app__info('gosswin.ver'))+
+      vbuildno(app__info('gosswina.ver'))+//28aug2025
       vbuildno(app__info('gosssnd.ver'))+
       vbuildno(app__info('gossgui.ver'))+
       vbuildno(app__info('gosszip.ver'))+
@@ -5041,6 +5893,7 @@ end;//case
 //successful
 result:=(xname<>'') or (xvalue<>'');
 end;
+
 
 //pointer procs ----------------------------------------------------------------
 function ptr__shift(xstart:pointer;xshift:longint):pointer;
@@ -5260,6 +6113,7 @@ result:=true;
 if not bit__hasval32(xvalue,xhasthisval) then xvalue:=xvalue or xhasthisval;
 end;
 
+
 //track procs ------------------------------------------------------------------
 
 function track__most:string;
@@ -5376,9 +6230,25 @@ else if (xindex=satSysFont)   then
    {$endif}
    exit;
    end;
-   
+
 //get
 if (xindex>=0) and (xindex<track_limit) then result:=track_active[xindex];
+end;
+
+function track__create(xindex:longint;xcreate:boolean):longint;//29aug2025
+begin
+
+if (xindex>=track_Core_start) and (xindex<track_limit) and (xindex<>track_Core_start) and (xindex<>track_GUI_start) then
+   begin
+
+   case xcreate of
+   true:result:=track_create[xindex];
+   else result:=track_destroy[xindex];
+   end;//case
+
+   end
+else result:=-1;
+
 end;
 
 function track__str(xindex:longint):string;
@@ -5395,27 +6265,39 @@ function track__label(x:longint):string;
 begin
 case x of
 //.overview
-satPartpaint        :r('paint.part');
-satFullpaint        :r('paint.full');
-satPartalign        :r('align.part');
-satFullalign        :r('align.full');
-satDragcount        :r('drag.count');
-satDragcapture      :r('drag.capture');
-satDragpaint        :r('drag.paint');
-satSizecount        :r('size.count');
-satMaskcapture      :r('maskcapture');
-satErrors           :r('errors');
-satSysFont          :r('sysfont');
-satTotalCore        :r('core.total');
-satTotalGUI         :r('gui.total');
+satPartpaint        :r('Paint Partial');
+satFullpaint        :r('Paint Full');
+satPartalign        :r('Align Partial');
+satFullalign        :r('Align Full');
+satDragcount        :r('Drag Count');
+satDragcapture      :r('Drag Capture');
+satDragpaint        :r('Drag Paint');
+satSizecount        :r('Size Count');
+satMaskcapture      :r('Mask Capture');
+satUpTime           :r('Up Time');
+satDPIawareV2       :r('OS.Dpi.Aware.v2');
+satGUIresources     :r('OS.GUI.Resources');
+satDLLload          :r('OS.DLL.Load');
+satAPIload          :r('OS.Api.Load');
+satAPIcalls         :r('OS.Api.Calls');
+satMemory           :r('Memory In Use');
+satMemorycount      :r('Memory Pointers');
+satMemoryFreeCount  :r('Memory Free Calls');
+satMemoryCreateCount:r('Memory Create Calls');
+satErrors           :r('Errors');
+satThreadFixes      :r('Thread Corrections');
+satSysFont          :r('Font Load');
+satTotalCore        :r('Core Load');
+satTotalGUI         :r('GUI Load');
 //.core
-satCoreTotal        :r('total');
+satCoreTotal        :r('Total');
 satBasicapp         :r('basicapp');
 satObjectex         :r('objectex');
+satSmall8           :r('Small Str8');
 satStr8             :r('str8');
 satMask8            :r('mask8');
 satBmp              :r('bmp');
-satBitmap           :r('bitmap');
+satWinbmp           :r('winbmp');
 satBasicimage       :r('image');
 satMidi             :r('midi');
 satMidiopen         :r('midi open');
@@ -5485,7 +6367,7 @@ satPlaylist         :r('playlist');
 satImageexts        :r('imageexts');
 
 //.gui
-satGUITotal         :r('total');
+satGUITotal         :r('Total');
 satSystem           :r('system');
 satControl          :r('control');
 satTitle            :r('title');
@@ -5625,119 +6507,108 @@ end;
 
 function track__findvalue_count:longint;
 var
-   n,v:string;
+   n,v,vc,vd:string;
    t:boolean;
 begin
-track__findvalue(0,result,n,v,t);
+track__findvalue(0,false,result,n,v,vc,vd,t);
 end;
 
-function track__findvalue(xindex:longint;var xcount:longint;var xname,xvalue:string;var xtitle:boolean):boolean;//17dec2024
-{
-   function xpad(x:string):string;
-   var
-      int1,int2:longint;
-   begin
-   int1:=low__len(xpadder);
-   int2:=frcmax32(low__len(x),int1);
-   result:=strcopy1(x,1,int2)+strcopy1b(xpadder,1,int1-int2);
-   end;
+function track__findvalue(xindex:longint;xnumber:boolean;var xcount:longint;var xname,xvalue,xcreateval,xdestroyval:string;var xtitle:boolean):boolean;//28aug2025, 24aug2025, 17dec2024
 
-   function xpadnum(x:string):string;
-   var
-      int1,int2:longint;
-   begin
-   int1:=4;
-   int2:=frcmax32(low__len(x),int1);
-   result:=strcopy1(x,1,int2)+strcopy1b(xpadder,1,int1-int2);
-   end;
-
-   function xnum(x:comp):string;
-   begin
-   if (x=0)      then result:=xpad('-')
-   else if (x<0) then result:=xpad('!'+k64(x))
-   else               result:=xpad(k64(x));
-   end;
-
-   procedure xaddsat(xindex,xnumber:longint);
-   var
-      str1,str2:string;
-   begin
-   //header
-   if (xindex<0) then
-      begin
-      a.sadd(xpadnum('#')+xsep+xpad(ntranslate('Name'))+xsep+xpad(ntranslate('Total'))+xsep+ntranslate('Rate')+rcode);
-      exit;
-      end;
-   //statistic
-   str1:='';
-   str2:='';
-   if (track_ratec[xindex]<>0) or (track_rated[xindex]<>0) then
-      begin
-      if (track_rated[xindex]<>0) then str1:='-'+k64(track_rated[xindex])+'/s';
-      if (track_ratec[xindex]<>0) then str2:='+'+k64(track_ratec[xindex])+'/s';
-      end;
-   a.sadd(xpadnum(intstr32(xnumber)+'. ')+xsep+xpad(track__label(xindex))+xsep+xnum(track_active[xindex])+xsep+str1+insstr('  ',(str1<>'') and (str2<>''))+str2+rcode);
-   end;
-
-   procedure xsechead(xtitle:string);
-   begin
-   a.sadd('-- '+xtitle+' --'+rcode);
-   end;
-{}
-   procedure xset2(n,v:string;t:boolean);
+   procedure xset4(n,v,vc,vd:string;t:boolean);
    var
       i:longint;
    begin
+
    if (n='') then
       begin
-      v:='';
-      t:=false;
+
+      v   :='';
+      vc  :='';
+      vd  :='';
+      t   :=false;
+
       end;
 
    if (n<>'') and (not t) then
       begin
-      if (xindex>=track_GUI_start) then i:=xindex-track_GUI_start+1
-      else if (xindex>=track_Core_start) then i:=xindex-track_Core_start+1
+
+      if      (xindex>=track_GUI_start)      then i:=xindex-track_GUI_start+1
+      else if (xindex>=track_Core_start)     then i:=xindex-track_Core_start+1
       else if (xindex>=track_Overview_start) then i:=xindex-track_Overview_start+1
       else i:=0;
 
       end
    else i:=0;
 
-   xname:=insstr(k64(i)+'. ',i>=1)+n;
-   xvalue:=v;
-   xtitle:=t;
-   result:=true;
+   xname        :=insstr(k64(i)+'. ', xnumber and (i>=1) ) + n;
+   xvalue       :=v;
+   xcreateval   :=vc;
+   xdestroyval  :=vd;
+   xtitle       :=t;
+   result       :=true;
+
    end;
 
-   procedure xset(n,v:string);
+   procedure xset2(const n,v:string;t:boolean);
+   begin
+   xset4(n,v,'','',t);
+   end;
+   
+   procedure xset(const n,v:string);
    begin
    xset2(n,v,false);
    end;
+
+   procedure xset0(const v:string);
+   begin
+   xset(track__label(xindex),v);
+   end;
+
+   function pn(x:comp):string;//positive number only
+   begin
+   if (x>=0) then result:=k64(x) else result:='';
+   end;
+
 begin
 //defaults
 result:=false;
 
 try
 //init
-xcount :=track_GUI_finish+1;
-xindex :=frcrange32(xindex,0,xcount-1);
+xcount      :=track_GUI_finish+1;
+xindex      :=frcrange32(xindex,0,xcount-1);
+xcreateval  :='';
+xdestroyval :='';
 
 //get
 case xindex of
-track_Overview_start-1:xset2('Overview','',true);
-track_Core_start-1    :xset2('Core','',true);
-track_GUI_start-1     :xset2('GUI','',true);
-else                   xset(track__label(xindex),k64(track__val(xindex)));
+track_Overview_start-1:xset2('Overview','Quantity',true);
+track_Core_start-1    :xset4('Core','Load','Create','Free',true);
+track_GUI_start-1     :xset4('GUI','Load','Create','Free',true);
+satUpTime             :xset0(low__uptime(sub64(ms64,system_boot),false,false,false,true,true,#32));//real-time
+satDPIawareV2         :xset0(low__yes(system_monitors_dpiAwareV2));
+satGUIresources       :xset0( low__aorbstr('-',k64(app__guiresources),app__guiresources>=0) );
+satDLLload            :xset0(k64(win__dllload)+' / '+k64(dllcount));//07sep2025
+satAPIload            :xset0(k64(win__procload)+' / '+k64(win__proccount));
+satAPIcalls           :xset0(k64(win__proccalls));
+satMemory             :xset0(k64(system_memory_bytes));
+satMemoryCount        :xset0(k64(system_memory_count));
+satMemoryFreeCount    :xset0(k64(system_memory_freecount));
+satMemoryCreateCount  :xset0(k64(system_memory_createcount));
+else                   xset4(track__label(xindex),k64(track__val(xindex)),pn(track__create(xindex,true)),pn(track__create(xindex,false)),false);//xxxxxxxxxxxxxxx
 end;
 
 //fallback
 if not result then
    begin
-   xname:='';
-   xvalue:='';
-   xtitle:=false;
+
+   xname   :='';
+   xvalue  :='';
+   xtitle  :=false;
+
    end;
+
 except;end;
 end;
 
@@ -6918,173 +7789,332 @@ function global__create(xsize:comp):pointer;//19may2025
 var
    h:hglobal;
 begin
+
 //defaults
 result:=nil;
 
-try
 //get
-h:=win____GlobalAlloc(GMEM_MOVEABLE, frcmin32(restrict32(xsize),0) );
-if (h<>0) then result:=win____GlobalLock(h);
+if (xsize>=1) then
+   begin
 
-//track
-if (result<>nil) then track_bytes:=add64(track_bytes,global__size(result));
-except;end;
-end;
-
-function global__resize(xptr:pointer;xnewsize:comp):pointer;//19may2025: fixed
-var
-   h:hglobal;
-begin
-//defaults
-result:=nil;
-
-try
-//get
-case (xptr<>nil) of
-true:begin
-   //track
-   track_bytes:=sub64(track_bytes,global__size(xptr));
-
-   //resize
-   h:=win____GlobalHandle(xptr);
-   if (h<>0) then win____GlobalUnlock(h);
-
-   h:=win____GlobalReAlloc(h, frcmin32(restrict32(xnewsize),0) ,GMEM_MOVEABLE);
+   h:=win____GlobalAlloc(GMEM_MOVEABLE, restrict32(xsize) );
    if (h<>0) then result:=win____GlobalLock(h);
 
-   //track
-   if (result<>nil) then track_bytes:=add64(track_bytes,global__size(result));
-   end;
-else result:=global__create(xnewsize);//auto tracked
-end;//case
+   if (result<>nil) then
+      begin
 
-except;end;
+      system_memory_bytes:=add64( system_memory_bytes, global__size(result) );
+      inc64(system_memory_count,1);
+
+      low__irollone64(system_memory_createcount);
+
+      end;
+
+   end;
+
 end;
 
-procedure global__free(var xptr:pointer);
+procedure global__free(var xptr:pointer);//01sep2025
 var
    h:hglobal;
 begin
+
 if (xptr<>nil) then
    begin
-   //track
-   track_bytes:=sub64(track_bytes,global__size(xptr));
 
    //free
    h:=win____GlobalHandle(xptr);
+
    if (h<>0) then
       begin
+
+      //track
+      system_memory_bytes:=frcmin64( sub64(system_memory_bytes,global__size(xptr)) ,0);//23oct2025
+      dec64(system_memory_count,1);
+
+      //free
       win____GlobalUnlock(h);
       win____GlobalFree(h);
+
       end;
 
    //set to nil
    xptr:=nil;
+
+   low__irollone64(system_memory_freecount);
    end;
+
+end;
+
+function global__resize(xptr:pointer;xnewsize:comp):pointer;
+begin
+global__resize2(xptr,xnewsize,result);
+end;
+
+function global__resize2(xptr:pointer;xnewsize:comp;var xoutptr:pointer):boolean;//26aug2025
+var
+   h:hglobal;
+   xoldsize:comp;
+begin
+
+//filter
+xnewsize:=restrict32(xnewsize);
+
+//reallocate existing memory
+if (xptr<>nil) and (xnewsize>=1) then
+   begin
+
+   xoldsize:=global__size(xptr);
+
+   //MS -> if it fails, original memory and pointer remain valid - 26aug2025
+   h:=win____GlobalHandle(xptr);
+   if (h<>0) then win____GlobalUnlock(h);
+
+   h:=win____GlobalReAlloc(h, restrict32(xnewsize), GMEM_MOVEABLE);
+   if (h<>0) then xoutptr:=win____GlobalLock(h) else xoutptr:=nil;
+
+   if (xoutptr<>nil) then
+      begin
+
+      system_memory_bytes:=add64(system_memory_bytes,xnewsize);
+      system_memory_bytes:=frcmin64( sub64(system_memory_bytes,xoldsize) ,0);//23oct2025
+
+      result:=true;
+
+      end
+
+   else
+      begin
+
+      //keep previous
+      h:=win____GlobalHandle(xptr);
+      if (h<>0) then xoutptr:=win____GlobalLock(h) else xoutptr:=nil;
+
+      result  :=false;
+
+      end;
+
+   end
+
+//free existing memory
+else if (xptr<>nil) and (xnewsize<=0) then
+   begin
+
+   global__free(xptr);
+   xoutptr :=nil;
+   result  :=true;
+
+   end
+
+//create new memory
+else if (xptr=nil) and (xnewsize>=1) then
+   begin
+
+   xoutptr :=global__create(xnewsize);
+   result  :=(xoutptr<>nil);
+
+   end
+
+//do nothing
+else
+   begin
+
+   xoutptr :=xptr;
+   result  :=false;
+
+   end;
+
 end;
 
 function global__size(xptr:pointer):comp;
 var
    h:hglobal;
 begin
+
 h:=win____GlobalHandle(xptr);
 if (h<>0) then result:=win____GlobalSize(h) else result:=0;
+
 end;
 
 
 //memory management procs ------------------------------------------------------
+
+function mem__create32(xsize:longint):pointer;
+begin
+result:=mem__create(xsize);
+end;
+
+function mem__create(xsize:comp):pointer;
+var
+   xsize32:longint;
+begin
+
+xsize32:=restrict32(xsize);
+
+if (xsize>=1) then
+   begin
+
+   result:=win____HeapAlloc(win____getprocessheap,0,xsize32);
+
+   if (result<>nil) then
+      begin
+
+      system_memory_bytes:=add64(system_memory_bytes,xsize32);
+      inc64(system_memory_count,1);
+
+      low__irollone64(system_memory_createcount);
+
+      end;
+
+   end
+else result:=nil;
+
+end;
+
+function mem__free(var xptr:pointer):boolean;//thread safe
+var
+   xoldsize:comp;
+begin
+
+//MS -> xptr can be nil and still be valid
+xoldsize:=mem__size(xptr);
+
+result:=(xptr<>nil) and win____HeapFree(win____getprocessheap,0,xptr);
+
+if result then
+   begin
+
+   system_memory_bytes:=frcmin64( sub64(system_memory_bytes, xoldsize ) ,0);//23oct2025
+   dec64(system_memory_count,1);
+   xptr:=nil;
+
+   low__irollone64(system_memory_freecount);
+
+   end;
+
+end;
+
+function mem__free2(xptr:pointer):longint;
+begin
+
+result:=0;
+mem__free(xptr);
+
+end;
+
+function mem__size(xptr:pointer):comp;
+begin
+
+case (xptr<>nil) of
+true:result:=frcmin64( win____heapsize(win____getprocessheap, 0, xptr)  ,0);
+else result:=0
+end;//case
+
+end;
+
+function mem__resize32(xptr:pointer;xnewsize:longint):pointer;
+begin
+mem__resize3(xptr,xnewsize,false,result);
+end;
+
+function mem__resize(xptr:pointer;xnewsize:comp):pointer;//thread safe - 26aug2026
+begin
+mem__resize3(xptr,xnewsize,false,result);
+end;
+
+function mem__resize2(xptr:pointer;xnewsize:comp;var xoutptr:pointer):boolean;//thread safe - 26aug2026
+begin
+result:=mem__resize3(xptr,xnewsize,false,xoutptr);
+end;
+
+function mem__resize3(xptr:pointer;xnewsize:comp;xclearnewbytes:boolean;var xoutptr:pointer):boolean;//thread safe - 26aug2026
+var
+   xoldsize:comp;
+   xnewsize32,p:longint;
+begin
+
+xnewsize32:=restrict32(xnewsize);
+
+//reallocate existing memory
+if (xptr<>nil) and (xnewsize>=1) then
+   begin
+
+   xoldsize:=mem__size(xptr);
+
+   //MS -> if it fails, original memory and pointer remain valid - 26aug2025
+   xoutptr:=win____HeapReAlloc( win____getprocessheap, 0, xptr, xnewsize32 );
+
+   if (xoutptr<>nil) then
+      begin
+
+      //clear newly allocated bytes
+      if xclearnewbytes and (xnewsize32>xoldsize) then
+         begin
+
+         for p:=restrict32(xoldsize) to (xnewsize32-1) do pdlbyte(xoutptr)[p]:=0;
+
+         end;//p
+
+      //track
+      system_memory_bytes:=add64( system_memory_bytes, xnewsize32 );
+      system_memory_bytes:=sub64( system_memory_bytes, xoldsize );
+
+      result:=true;
+
+      end
+
+   else
+      begin
+
+      xoutptr :=xptr;//keep previous
+      result  :=false;
+
+      end;
+
+   end
+
+//free existing memory
+else if (xptr<>nil) and (xnewsize<=0) then
+   begin
+
+   mem__free(xptr);
+   xoutptr :=nil;
+   result  :=true;
+
+   end
+
+//create new memory
+else if (xptr=nil) and (xnewsize>=1) then
+   begin
+
+   xoutptr :=mem__create(xnewsize);//allocate new memory
+   result  :=(xoutptr<>nil);
+
+   end
+
+//do nothing
+else
+   begin
+
+   xoutptr :=xptr;
+   result  :=false;
+
+   end;
+
+end;
+
 procedure mem__newpstring(var z:pstring);//29NOV2011
 begin
 track__inc(satPstring,1);
 system.new(z);
 end;
+
 procedure mem__despstring(var z:pstring);//29NOV2011
 begin
 system.dispose(z);
 track__inc(satPstring,-1);
 end;
 
-function mem__getmem(var p:pointer;size,xid:longint):boolean;//27apr2021, 29apr2020
-begin
-result:=false;
-
-try
-system.getmem(p,size);
-if (size<=0) then p:=nil;
-track_bytes:=add64(track_bytes,size);
-result:=true;
-except;end;
-end;
-
-function mem__reallocmem(var p:pointer;oldsize,newsize,xid:longint):boolean;//27apr2021, 29apr2020
-var
-   //wasp:pointer;
-   xok:boolean;
-begin
-//defaults
-result:=false;
-
-try
-xok:=false;
-//range
-if (newsize<0) then newsize:=0;
-//get
-try
-system.reallocmem(p,newsize);//does set to nil but we are covering it just in case - 27apr2021
-xok:=true;
-except;end;
-//reset -> Delphi's proc fails to reset "p" to nil - 29apr2021
-if (newsize<=0) or (not xok) then p:=nil;
-//memory
-track_bytes:=add64(track_bytes,newsize);
-track_bytes:=sub64(track_bytes,oldsize);
-//successful
-result:=xok;
-except;end;
-end;
-
-function mem__reallocmemCLEAR(var p:pointer;oldsize,newsize,xid:longint):boolean;//29apr2021, 29NOV2011
-label
-   skipend;
-var
-   a:pdlbyte;
-   i:longint;
-begin
-//defaults
-result:=false;
-
-try
-//range
-if (oldsize<0) then oldsize:=0;
-if (newsize<0) then newsize:=0;
-//get
-if not mem__reallocmem(p,oldsize,newsize,xid) then goto skipend;
-//clear
-if (p<>nil) and (newsize>oldsize) then//fixed 29apr2021
-   begin
-   a:=pdlbyte(p);
-   for i:=oldsize to (newsize-1) do a[i]:=0;
-   end;
-//successful
-result:=true;
-skipend:
-except;end;
-end;
-
-function mem__freemem(var x:pointer;oldsize,xid:longint):boolean;//27apr2021, 29apr2020
-begin
-result:=false;
-
-try
-if (x<>nil) then//27apr2021
-   begin
-   system.freemem(x);//does not set "x" to "nil" when freeing - 28apr2021
-   x:=nil;//27apr2021
-   track_bytes:=sub64(track_bytes,oldsize);
-   end;
-result:=true;
-except;end;
-end;
 
 //block memory management procs ------------------------------------------------
 function block__size:longint;
@@ -7169,28 +8199,18 @@ end;
 
 function block__new:pointer;
 begin
-result:=mem__alloc(system_blocksize);
+result:=mem__create(system_blocksize);
 if (result<>nil) then track__inc(satBlock,1);
 end;
 
 procedure block__free(var x:pointer);
 begin
-if (x<>nil) then
-   begin
-   mem__free(x);
-   x:=nil;
-   if (x=nil) then track__inc(satBlock,-1);
-   end;
+if (x<>nil) and mem__free(x) and (x=nil) then track__inc(satBlock,-1);
 end;
 
 procedure block__freeb(x:pointer);
 begin
-if (x<>nil) then
-   begin
-   mem__free(x);
-   x:=nil;
-   if (x=nil) then track__inc(satBlock,-1);
-   end;
+if (x<>nil) and mem__free(x) and (x=nil) then track__inc(satBlock,-1);
 end;
 
 //binary string procs ----------------------------------------------------------
@@ -7579,396 +8599,6 @@ except;end;
 try;str__uaf(x);except;end;
 end;
 
-//system thread procs ----------------------------------------------------------
-procedure systhread__initall;
-var
-   p:longint;
-begin
-try
-//check
-if systhread_initall then exit else systhread_initall:=true;
-//get
-for p:=0 to high(systhread_running) do
-begin
-systhread_running[p]   :=false;
-systhread_ready[p]     :=false;
-systhread_muststop[p]  :=false;
-systhread_handle[p]    :=0;
-systhread_id[p]        :=0;
-systhread_timerid[p]   :=0;
-systhread_timerms[p]   :=0;
-systhread_usingtimer[p]:=false;
-systhread_fast64[p]    :=0;//fast always by default
-//lag time
-systhread_lag[p]       :=0;
-systhread_lastlag[p]   :=0;
-systhread_lagref[p]    :=0;
-systhread_ref1000[p]   :=0;
-//io buffers
-systhread_bufferid[p]  :=0;
-systhread_bufferid2[p] :=0;
-systhread_cmd[p]       :=0;
-systhread_bufferlen[p] :=0;
-end;//p
-except;end;
-end;
-
-function systhread__start(xstartproc:TFNThreadStartRoutine;xms:longint;xfast:comp;var xslot:longint):boolean;
-var//Note: xms can be negative (no timer) or positive (with timer): - 05mar2022
-   //      -N..0 = use sleep() in thread loop (no mmtimer) -> about 3-4ms intervals on Win98 = STABLE (Win98)
-   //      1..N  = use mmtimer -> about 20ms (drifting up to 40ms) intervals on Win98 = UNSTABLE (Win98)
-   p:longint;
-   xusetimer:boolean;
-begin
-//defaults
-result :=false;
-xslot  :=0;
-
-try
-//check
-if (xstartproc=nil) then exit;
-
-//range
-xusetimer :=(xms>=1);
-
-if (xms<0) then xms:=-xms;
-xms       :=frcrange32(xms,1,5000);//always 1..N
-
-//get
-for p:=0 to high(systhread_handle) do
-begin
-if not systhread_running[p] then
-   begin
-   //inc
-   track__inc(satThread,1);//11jan2025
-
-   //core support
-   xslot                   :=p;
-   systhread_running[p]    :=true;
-   systhread_ready[p]      :=false;
-   systhread_muststop[p]   :=false;
-   systhread_id[p]         :=0;
-   systhread_timerid[p]    :=0;
-   systhread_timerms[p]    :=xms;
-   systhread_usingtimer[p] :=false;
-   systhread_fast64[p]     :=xfast;//0=fast always, ms64+N=fast for N milliseconds
-   //lag support
-   systhread_lag[p]        :=-1;
-   systhread_lastlag[p]    :=0;
-   systhread_lagref[p]     :=0;
-   systhread_ref1000[p]    :=0;
-   //buffer support
-   systhread_bufferid[p]   :=0;
-   systhread_bufferid2[p]  :=0;
-   systhread_cmd[p]        :=0;
-   systhread_bufferlen[p]  :=0;
-
-   //get
-   systhread_handle[p]     :=win____createthread(nil,0,xstartproc,pointer(p),0,systhread_id[p]);
-   if (systhread_handle[p]<>0) and xusetimer then
-      begin
-      //Special Note: 2nd "xms" is resolution and must exacltly match the value used in "stoptimer" to "timeEndPeriod()" else program will HANG - 05mar2022
-      systhread_timerid[p]:=win____timesetevent(xms,xms,@systhread__timerproc,systhread_id[p],1);//last "1" => "TIME_PERIODIC" - 18apr2021
-      systhread_usingtimer[p]:=(systhread_timerid[p]<>0);
-      end;
-
-//this is wrong: was:  setthreadpriority(systhread_id[p],THREAD_PRIORITY_TIME_CRITICAL);//This is WRONG, we need to use HANDLE and not ID
-//let timer proc itself handle this priority stuff: was:   setthreadpriority(systhread_handle[p],THREAD_PRIORITY_TIME_CRITICAL);//Correct as of 05mar2022
-
-   //.start thread
-   systhread_ready[p]      :=true;
-   result                  :=true;
-   //quit
-   break;
-   end;
-end;//p
-except;end;
-end;
-
-function systhread__canstop(xslot:longint):boolean;
-begin
-result:=systhread__slotOK(xslot) and systhread_running[xslot] and (not systhread_muststop[xslot]);
-end;
-
-procedure systhread__stop(xslot:longint);
-begin
-if systhread__canstop(xslot) then systhread_muststop[xslot]:=true;
-end;
-
-function systhread__running(xslot:longint):boolean;//21nov2024
-begin
-result:=systhread__slotOK(xslot) and systhread_running[xslot];
-end;
-
-procedure systhread__stopwait(xslot:longint);
-begin
-try
-if systhread__slotOK(xslot) and systhread_running[xslot] then
-   begin
-   if not systhread_muststop[xslot] then systhread_muststop[xslot]:=true;
-
-   while systhread_running[xslot] do
-   begin
-   app__processmessages;
-   win____sleep(10);
-   end;//loop
-   end;
-
-
-{
-if systhread__canstop(xslot) then
-   begin
-   systhread_muststop[xslot]:=true;
-   while systhread_running[xslot] do
-   begin
-   app__processmessages;
-   win____sleep(10);
-   end;//loop
-   end;
-{}
-except;end;
-end;
-
-procedure systhread__stopall(xwait:boolean);
-var
-   p:longint;
-   bol1:boolean;
-begin
-try
-//stop
-for p:=0 to high(systhread_muststop) do if systhread__canstop(p) then systhread_muststop[p]:=true;
-//wait
-while true do
-begin
-bol1:=false;
-for p:=0 to high(systhread_muststop) do if systhread_running[p] then
-   begin
-   bol1:=true;
-   break;
-   end;
-if not bol1 then break;
-app__processmessages;
-win____sleep(10);
-end;//loop
-except;end;
-end;
-
-function systhread__lag(xslot:longint):longint;
-begin
-if systhread__slotOK(xslot) then result:=trunc(systhread_lag[xslot]) else result:=-1;
-end;
-
-function systhread__fast(xslot:longint):boolean;//05mar2022
-begin
-result:=systhread__slotOK(xslot) and ((systhread_fast64[xslot]=0) or (systhread_fast64[xslot]>=ms64));
-end;
-
-procedure systhread__setfast(xslot:longint;xre64:comp);
-begin
-if systhread__slotOK(xslot) and (xre64<>systhread_fast64[xslot]) then systhread_fast64[xslot]:=xre64;
-end;
-
-procedure systhread__synclag(xslot:longint;xms64:comp);
-var
-   tmp64:comp;
-begin
-try
-if systhread__slotOK(xslot) then
-   begin
-   if (systhread_lagref[xslot]=0) then tmp64:=0 else tmp64:=xms64-systhread_lagref[xslot];
-   if (tmp64>systhread_lastlag[xslot]) then systhread_lastlag[xslot]:=tmp64;
-   systhread_lagref[xslot]:=xms64;
-   if (xms64>=systhread_ref1000[xslot]) then
-      begin
-      systhread_ref1000[xslot]:=xms64+1000;
-      systhread_lag[xslot]:=systhread_lastlag[xslot];
-      systhread_lastlag[xslot]:=0;
-      end;
-   end;
-except;end;
-end;
-
-function systhread__pushing(xslot:longint):boolean;
-begin
-if not systhread__slotOK(xslot) then result:=true
-else if (systhread_bufferid[xslot]=systhread_bufferid2[xslot]) or (systhread_muststop[xslot]) or (not (systhread_running[xslot])) then result:=false
-else result:=true;
-end;
-
-function systhread__push(xslot:longint;xcmd:longint;xdata:string;var xreplycmd:longint;var xreplydata:string):boolean;
-begin
-//defaults
-result:=false;
-xreplycmd:=0;
-xreplydata:='';
-
-//get
-if not systhread__pushstart(xslot,xcmd,xdata) then exit;
-if not systhread__pushfinish(xslot,true,xreplycmd,xreplydata) then exit;
-
-//successful
-result:=true;
-end;
-
-function systhread__pushstart(xslot:longint;xcmd:longint;xdata:string):boolean;
-var
-   xlen,p:longint;
-begin
-//defaults
-result:=false;
-
-try
-//check
-if not systhread__slotOK(xslot) then exit;
-if not systhread_running[xslot] then exit;
-if (systhread_bufferid[xslot]<>systhread_bufferid2[xslot]) then exit;
-//init
-xlen:=frcmax32(low__len(xdata),1+high(tsysthread_buffer));
-//fill
-if (xlen>=1) then
-   begin
-   systhread_bufferlen[xslot]:=xlen;
-   for p:=1 to xlen do
-   begin
-   systhread_buffer[xslot][p-1]:=ord(xdata[p-1+stroffset]);//22feb2022
-   end;//p
-   end;
-systhread_cmd[xslot]:=xcmd;
-//inc
-if (systhread_bufferid[xslot]>=max32) then systhread_bufferid[xslot]:=0 else inc(systhread_bufferid[xslot]);
-//successful
-result:=true;
-except;end;
-end;
-
-function systhread__pushfinish(xslot:longint;xwait:boolean;var xreplycmd:longint;var xreplydata:string):boolean;
-label
-   redo;
-var
-   xlen,p:longint;
-begin
-//defaults
-result:=false;
-xreplycmd:=0;
-xreplydata:='';
-
-try
-//check
-if not systhread__slotOK(xslot) then
-   begin
-   result:=true;
-   exit;
-   end;
-if not systhread_running[xslot] then
-   begin
-   result:=true;
-   exit;
-   end;
-//wait
-redo:
-if (systhread_bufferid[xslot]=systhread_bufferid2[xslot]) or (systhread_muststop[xslot]) or (not (systhread_running[xslot])) then
-   begin
-   //set
-   xreplycmd:=systhread_cmd[xslot];
-   xlen:=frcmax32(systhread_bufferlen[xslot],1+high(tsysthread_buffer));
-   if (xlen>=1) then
-      begin
-      low__setlen(xreplydata,xlen);
-      for p:=1 to xlen do xreplydata[p-1+stroffset]:=char(systhread_buffer[xslot][p-1]);
-      end;
-   //successful
-   result:=true;
-   end
-else if xwait then
-   begin
-   app__processmessages;
-   win____sleep(10);
-   goto redo;
-   end;
-except;end;
-end;
-
-function systhread__mustreply(xslot:longint;var xcmd:longint;var xdata:string):boolean;
-var
-   p,xlen:longint;
-begin
-//defaults
-result:=false;
-xcmd:=0;
-xdata:='';
-
-try
-//check
-if not systhread__slotOK(xslot) then exit;
-if (systhread_bufferid[xslot]=systhread_bufferid2[xslot]) then exit;
-//get
-result:=true;
-xlen:=frcmax32(systhread_bufferlen[xslot],1+high(tsysthread_buffer));
-if (xlen>=1) then
-   begin
-   low__setlen(xdata,xlen);
-   xcmd:=systhread_cmd[xslot];
-   for p:=1 to xlen do xdata[p-1+stroffset]:=char(systhread_buffer[xslot][p-1]);
-   end;
-except;end;
-end;
-
-function systhread__reply(xslot:longint;xcmd:longint;xdata:string):boolean;
-var
-   p,xlen:longint;
-begin
-//defaults
-result:=false;
-
-try
-//check
-if not systhread__slotOK(xslot) then exit;
-if (systhread_bufferid[xslot]=systhread_bufferid2[xslot]) then exit;
-
-//get
-systhread_cmd[xslot]:=xcmd;
-xlen:=frcmax32(low__len(xdata),1+high(tsysthread_buffer));
-systhread_bufferlen[xslot]:=xlen;
-if (xlen>=1) then
-   begin
-   for p:=1 to xlen do systhread_buffer[xslot][p-1]:=ord(xdata[p-1+stroffset]);
-   end;
-
-//successful
-result:=true;
-
-//inc
-systhread_bufferid2[xslot]:=systhread_bufferid[xslot];
-except;end;
-end;
-
-procedure systhread__timerproc(uTimerID, uMsg: Integer; dwUser, dwParam1, dwParam2: longint); stdcall;
-begin
-win____postthreadmessage(HWND(dwUser), WM_MULTIMEDIA_TIMER, 0, 0);
-end;
-
-function systhread__slotOK(xslot:longint):boolean;
-begin
-result:=(xslot>=0) and (xslot<=high(systhread_muststop));
-end;
-
-procedure systhread__stoptimer(xslot:longint);
-var
-   int1,int2:longint;
-begin
-try
-if systhread__slotOK(xslot) and (systhread_timerid[xslot]<>0) then
-   begin
-   int1:=systhread_timerid[xslot];
-   int2:=systhread_timerms[xslot];
-   systhread_usingtimer[xslot]:=false;//05mar2022
-   systhread_timerid[xslot]:=0;
-   systhread_timerms[xslot]:=0;
-   win____timeKillEvent(int1);
-   win____timeEndPeriod(int2);//Absolutely required -> checked on 05mar2022 -> AND if not used here then calling "stoptimer" will make the program HANG - 05mar2022
-   end;
-except;end;
-end;
 
 //string procs -----------------------------------------------------------------
 function str__addrec(x:pobject;xrec:pointer;xrecsize:longint):boolean;//20feb2024, 07feb2022
@@ -8112,14 +8742,47 @@ begin
 result:=str__ok(x) and (x^ is tstr9);
 end;
 
-function str__as8(x:pobject):tstr8;//use with care
+function str__as8(x:pobject):tstr8;
 begin
 if str__is8(x) then result:=(x^ as tstr8) else result:=nil;
 end;
 
-function str__as9(x:pobject):tstr9;//use with care
+function str__as9(x:pobject):tstr9;
 begin
 if str__is9(x) then result:=(x^ as tstr9) else result:=nil;
+end;
+
+function str__as8f(x:pobject):tstr8;//uses fallback var instead of failure - 30aug2025
+begin
+
+if str__is8(x) then result:=(x^ as tstr8)
+else
+   begin
+
+   if (system_root_str8=nil) then system_root_str8:=str__new8;
+   system_root_str8.floatsize:=5000;
+   system_root_str8.clear;
+
+   result:=system_root_str8;
+
+   end;
+
+end;
+
+function str__as9f(x:pobject):tstr9;//uses fallback var instead of failure - 30aug2025
+begin
+
+if str__is9(x) then result:=(x^ as tstr9)
+else
+   begin
+
+   if (system_root_str9=nil) then system_root_str9:=str__new9;
+   system_root_str9.clear;
+
+   result:=system_root_str9;
+
+   end;
+
 end;
 
 function str__asame2(x:pobject;xfrom:longint;const xlist:array of byte):boolean;
@@ -9307,6 +9970,36 @@ str__uaf(xoutdata);
 except;end;
 end;
 
+function str__nullstr(x:pobject):string;//07oct2025
+var
+   p,i:longint;
+begin
+
+//defaults
+result:='';
+
+//get
+if str__lock(x) then
+   begin
+
+   try
+   for p:=1 to str__len(x) do if (str__pbytes0(x,p-1)=0) then
+      begin
+
+      low__setlen(result,p-1);
+      for i:=1 to (p-1) do result[i-1+stroffset]:=char( str__pbytes0(x,i-1) );
+      break;
+
+      end;//p
+   except;end;
+
+   //free
+   str__uaf(x);
+
+   end;
+
+end;
+
 function str__nextline0(xdata,xlineout:pobject;var xpos:longint):boolean;//07apr2025, 31mar2025, 17oct2018
 label
    skipend;
@@ -9424,66 +10117,60 @@ end;
 
 function bcopystrall(const x:string):tstr8;
 begin
-result:=nil;
-try
+
 result:=str__newaf8;
 if (x<>'') then result.sadd(x);
-except;end;
+
 end;
 
 function bcopyarray(const x:array of byte):tstr8;
 begin
-result:=nil;
-try
+
 result:=str__newaf8;
 result.aadd(x);
-except;end;
+
 end;
 
 function bnew2(var x:tstr8):boolean;//21mar2022
 begin
-result:=false;
-try
-x:=nil;
+
 x:=str__new8;
 result:=(x<>nil);
-except;end;
+
 end;
 
 function bnewlen(xlen:longint):tstr8;
 begin
-result:=nil;
-try
+
 result:=tstr8.create(frcmin32(xlen,0));
-except;end;
+
 end;
 
 function bnewstr(const xtext:string):tstr8;
 begin
-result:=nil;
-try
 result:=str__new8;
-result.replacestr:=xtext;
-except;end;
+try;result.replacestr:=xtext;except;end;
 end;
 
-function breuse(var x:tstr8;xtext:string):tstr8;//also acts as a pass-thru - 05jul2022
+function breuse(var x:tstr8;const xtext:string):tstr8;//also acts as a pass-thru - 24aug2025, 05jul2022
 begin//Warning: Use with care, auto-creates, but never destroys -> that is upto the host
 result:=nil;
+
 try
+
 if (x=nil) then x:=str__new8;
-x.replacestr:=xtext;
-result:=x;
+x.replacestr :=xtext;
+result       :=x;
+
 except;end;
 end;
 
 function bnewfrom(xdata:tstr8):tstr8;
 begin
-result:=nil;
-try
+
 result:=tstr8.create(0);
 result.replace:=xdata;
-except;end;
+
 end;
 
 //zero checkers ----------------------------------------------------------------
@@ -9653,67 +10340,84 @@ begin
 result:=system_min32_val;
 end;
 
-function ms64:comp;//64bit millisecond system timer, 01-SEP-2006
-var//64bit system timer, replaces "gettickcount" with range of 49.7 days,
-   //now with new range of 29,247 years.
-   //Note: must be called atleast once every 49.7 days, or it will loose track so
-   //      system timer should call this routine regularly.
-   i4:tint4;
-   tmp:comp;
+function ms64:comp;//15aug2025
 begin
-//defaults
-result:=0;
 
-try
-{$ifdef d3laz}
+//init
+if (system_ms64_divval<=0) then
+   begin
+
+   win____QueryPerformanceFrequency(system_ms64_divval);
+   if (system_ms64_divval>1000) then system_ms64_divval:=frcmin64(div64(system_ms64_divval,1000),1);
+
+   end;
 
 //get
-//i4.val:=gettickcount;
-i4.val:=win____timeGettime;//high resolution timer - 28sep2021
-//#1
-result:=i4.bytes[0];
-//#2
-tmp:=i4.bytes[1];
-result:=result+(tmp*256);
-//#3
-tmp:=i4.bytes[2];
-result:=result+(tmp*256*256);
-//#4
-tmp:=i4.bytes[3];
-result:=result+(tmp*256*256*256);
-//#5
-if (not system_ms64_init) then
-   begin
-{//debug code only
-   if programtesting then
-      begin
-      ms64OFFSET:=max32;
-      ms64OFFSET:=ms64OFFSET*4;
-      end
-   else ms64OFFSET:=0;
-{}
-   system_ms64_offset:=0;
-   system_ms64_last:=result;
-   system_ms64_init:=true;
-   end;
-//# thread safe - allow a large difference margin (10 minutes) so close calling
-//# threads won't corrupt (increment falsely) the offset var.
-if ((result+600000)<system_ms64_last) then system_ms64_offset:=add64(system_ms64_offset,system_ms64_last);
-//lastv
-system_ms64_last:=result;
-//#6
-result:=add64(result,system_ms64_offset);
-{$endif}
+win____QueryPerformanceCounter(result);
+result           :=result/system_ms64_divval;
 
-{$ifdef D10}
-result:=DateTimeToMilliseconds(now);
-{$endif}
-except;end;
+system_slowms64.ms   :=result;//auto-sync the ms63 timer
+system_slowms64.scan :=0;
+
 end;
 
 function ms64str:string;//06NOV2010
 begin
 result:=floattostrex2(ms64);
+end;
+
+function fastms64:comp;
+begin
+result:=ms64;
+end;
+
+function fastms64str:string;
+begin
+result:=ms64str;
+end;
+
+function slowms64:comp;//slower, less demanding version of ms64 - 14sep2025, 31aug2025
+begin
+
+if (system_slowms64.ms<=0) then result:=ms64
+else
+   begin
+
+   inc(system_slowms64.scan);
+   if (system_slowms64.scan>=100) then
+      begin
+
+      system_slowms64.scan  :=0;
+      system_slowms64.ms    :=ms64;
+
+      end;
+
+   result:=system_slowms64.ms;
+   end;
+
+end;
+
+function slowms64str:string;//14sep2025
+begin
+result:=floattostrex2(slowms64);
+end;
+
+function ns64:comp;//15aug2025
+begin
+
+//init
+if (system_ns64_divval<=0) then
+   begin
+
+   win____QueryPerformanceFrequency(system_ns64_divval);
+   if (system_ns64_divval>1000000) then system_ns64_divval:=frcmin64(div64(system_ns64_divval,1000000),1);
+
+   end;
+
+//get
+win____QueryPerformanceCounter(result);
+result:=result/system_ns64_divval;
+
 end;
 
 function msr64:comp;//relative 64bit millisecond system timer - 20feb2021
@@ -9768,25 +10472,38 @@ begin
 result:=(xref>=ms64);
 end;
 
+
 //simple message procs ---------------------------------------------------------
-function showtext(const x:string):boolean;//12jun2025
+
+function showhandle:longint;
 begin
-result:=showbasic(x);
+result:=app__activehandle;
+end;
+
+function showquery(const x:string):boolean;//03oct2025
+begin
+result:=(mbrYes=win____MessageBox(showhandle,pchar(x),'Query',mbWarning+MB_YESNO));
 end;
 
 function showbasic(const x:string):boolean;//18jun2025
 begin
-result:=showbasic2(x,2);
+result:=showtext2(x,2);
 end;
 
-function showbasic2(const x:string;xsec:longint):boolean;//26apr2025
+function showtext(const x:string):boolean;//12jun2025
+begin
+result:=showtext2(x,2);
+end;
+
+function showtext2(const x:string;xsec:longint):boolean;//26apr2025
 begin
 result:=true;
 
 try
 {$ifdef gui}
 low__closelock;
-win____MessageBox(app__activehandle,pchar(x),'Information',$00000000+$40);
+win____MessageBox(showhandle,pchar(x),'Information',$00000000+$40);//better for testing
+//win____MessageBox(app__activehandle,pchar(x),'Information',$00000000+$40);
 try;low__closeunlock;except;end;
 {$else}
 app__writenil;
@@ -9804,7 +10521,7 @@ result:=true;
 try
 {$ifdef gui}
 low__closelock;
-win____messagebox(app__activehandle,pchar(x),'Information',$00000000+$40);
+win____messagebox(showhandle,pchar(x),'Information',$00000000+$40);
 try;low__closeunlock;except;end;
 {$else}
 app__writenil;
@@ -9826,7 +10543,7 @@ result:=true;
 try
 {$ifdef gui}
 low__closelock;
-win____messagebox(app__activehandle,pchar(x),'Error!',$00000000+$10);
+win____messagebox(showhandle,pchar(x),'Error',$00000000+$10);
 try;low__closeunlock;except;end;
 {$else}
 app__writenil;
@@ -9838,7 +10555,12 @@ except;end;
 end;
 
 //date and time procs ----------------------------------------------------------
-function low__uptime(x:comp;xforcehr,xforcemin,xforcesec,xshowsec,xshowms:boolean;xsep:string):string;//28apr2024: changed 'dy' to 'd', 01apr2024: xforcesec, xshowsec/xshowms pos swapped, fixed - 09feb2024, 27dec2021, fixed 10mar2021, 22feb2021, 22jun2018, 03MAY2011, 07SEP2007
+function low__uptime(x:comp;xforcehr,xforcemin,xforcesec,xshowsec,xshowms:boolean;const xsep:string):string;//28apr2024: changed 'dy' to 'd', 01apr2024: xforcesec, xshowsec/xshowms pos swapped, fixed - 09feb2024, 27dec2021, fixed 10mar2021, 22feb2021, 22jun2018, 03MAY2011, 07SEP2007
+begin
+result:=low__uptime2(x,xforcehr,xforcemin,xforcesec,xshowsec,xshowms,xsep,'');
+end;
+
+function low__uptime2(x:comp;xforcehr,xforcemin,xforcesec,xshowsec,xshowms:boolean;const xsep,xsep2:string):string;//15aug2025
 const//Show: days, hours, min, sec - 09feb2024, 03MAY2011
      //Note: x is time in milliseconds
    oneday  =86400000;
@@ -9850,13 +10572,13 @@ var
    ok:boolean;
 begin
 //defaults
-result:='';
-ok:=false;
-dy:=0;
-h:=0;
-m:=0;
-s:=0;
-ms:=0;
+result :='';
+ok     :=false;
+dy     :=0;
+h      :=0;
+m      :=0;
+s      :=0;
+ms     :=0;
 
 try
 //range
@@ -9888,28 +10610,28 @@ if (x>=0) then
 //set
 if (dy>=1) or ok then
    begin
-   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(dy,1)+'d';//28apr2024: changed 'dy' to 'd', 02MAY2011
+   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(dy,1)+xsep2+'d';//28apr2024: changed 'dy' to 'd', 02MAY2011
    ok:=true;
    end;
 if (h>=1) or ok or xforcehr then
    begin
-   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(h,2)+'h';
+   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(h,2)+xsep2+'h';
    ok:=true;
    end;
 if (m>=1) or ok or xforcemin then
    begin
-   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(m,2)+'m';
+   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(m,2)+xsep2+'m';
    ok:=true;
    end;
 if (xshowsec or xshowms) and ((s>=1) or ok or xforcesec) then//01apr2024: xforcesec, fixed - 27dec2021
    begin
-   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(s,2)+'s';
+   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(s,2)+xsep2+'s';
    ok:=true;
    end;
 if xshowms then//fixed - 27dec2021
    begin
    //enforce range
-   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(ms,low__insint(3,ok))+'ms';
+   result:=result+insstr(xsep,low__len(result)>=1)+low__digpad20(ms,low__insint(3,ok))+xsep2+'ms';
    //ok:=true;
    end;
 except;end;
@@ -10450,33 +11172,49 @@ begin
 result:=low__date0(xyear,xmonth1-1,xday1-1,xformat,xfullname);
 end;
 
-function low__date0(xyear,xmonth,xday:longint;xformat:longint;xfullname:boolean):string;
+function low__date0(xyear,xmonth,xday:longint;xformat:longint;xfullname:boolean):string;//03sep2025
 var
    xmonthstr,xth:string;
 begin
-//defaults
-result:='';
 
-try
 //range
-xday:=1+frcrange32(xday,0,30);
-xmonth:=1+frcrange32(xmonth,0,11);
-xmonthstr:=low__month1(xmonth,xfullname);
-//get
+xday       :=1+frcrange32(xday,0,30);
+xmonth     :=1+frcrange32(xmonth,0,11);
+xmonthstr  :=low__month1(xmonth,xfullname);
+
+//init
 case xday of
 1,21,31:xth:='st';
 2,22:xth:='nd';
 3,23:xth:='rd';
 else xth:='th';
 end;
-//set
-case frcrange32(xformat,0,3) of
+
+//get
+case frcrange32(xformat,0,4) of
 1:result:=low__digpad11(xday,1)+xth+#32+xmonthstr+insstr(#32+low__digpad11(xyear,4),xyear>=0);
 2:result:=xmonthstr+#32+low__digpad11(xday,1)+insstr(', '+low__digpad11(xyear,4),xyear>=0);
 3:result:=xmonthstr+#32+low__digpad11(xday,1)+xth+insstr(', '+low__digpad11(xyear,4),xyear>=0);
+4:result:=low__digpad11(xday,2)+#32+xmonthstr+insstr(#32+low__digpad11(xyear,4),xyear>=0);//03sep2025
 else result:=low__digpad11(xday,1)+#32+xmonthstr+insstr(#32+low__digpad11(xyear,4),xyear>=0);
+end;//case
+
 end;
-except;end;
+
+function low__timestr(xdate:tdatetime;xformat:longint):string;//29sep2025
+var
+   h,m,s,ms:word;
+begin
+
+//init
+low__decodetime2(xdate,h,m,s,ms);
+
+//get
+case xformat of
+0   :result:=low__time0(h,m,':',#32,true,false);
+else result:=low__time0(h,m,':',#32,true,false);
+end;//case
+
 end;
 
 function low__time0(xhour,xminute:longint;xsep,xsep2:string;xuppercase,xshow24:boolean):string;
@@ -10564,9 +11302,101 @@ begin
 result:=strcopy1(xcolwidth,1,frcmax32(low__len(xcolwidth),xmaxwidth)-low__len(x))+x;
 end;
 
-function hex8__int4(const x:string):longint;//19may2025
+function hex4__int2(const x:string):word;//26aug2025
+
+   function xval(x:byte):longint;
+   begin
+   case x of
+   48..57: result:=x-48;
+   65..70: result:=x-55;
+   97..102:result:=x-87;
+   else    result:=0;
+   end;//case
+   end;
+
+   function v1(xpos:longint):byte;
+   begin
+   result:=(xval(strbyte1(x,xpos))*16) + xval(strbyte1(x,xpos+1));
+   end;
+
+begin
+twrd2(result).bytes[0]:=v1(1);
+twrd2(result).bytes[1]:=v1(3);
+end;
+
+function int2__hex4(const x:longint):string;//26aug2025
 var
-   v:tint4;
+   x2:twrd2;
+   v,v2:longint;
+   c6,c7,c8,c9:char;
+begin
+//init
+x2.val:=frcrange32(x,0,max16);
+
+//c=6,7
+v :=x2.bytes[0] div 16;
+v2:=x2.bytes[0]-(v*16);
+if (v <=9) then c6:=char(48+v ) else c6:=char(55+v );
+if (v2<=9) then c7:=char(48+v2) else c7:=char(55+v2);
+
+//c=8,9
+v :=x2.bytes[1] div 16;
+v2:=x2.bytes[1]-(v*16);
+if (v <=9) then c8:=char(48+v ) else c8:=char(55+v );
+if (v2<=9) then c9:=char(48+v2) else c9:=char(55+v2);
+
+//get
+result:=c6+c7+c8+c9;
+end;
+
+function hex4__int2RL(const x:string):word;//26aug2025
+
+   function xval(x:byte):longint;
+   begin
+   case x of
+   48..57: result:=x-48;
+   65..70: result:=x-55;
+   97..102:result:=x-87;
+   else    result:=0;
+   end;//case
+   end;
+
+   function v1(xpos:longint):byte;
+   begin
+   result:=(xval(strbyte1(x,xpos))*16) + xval(strbyte1(x,xpos+1));
+   end;
+
+begin
+twrd2(result).bytes[0]:=v1(3);
+twrd2(result).bytes[1]:=v1(1);
+end;
+
+function int2__hex4RL(const x:longint):string;//26aug2025
+var
+   x2:twrd2;
+   v,v2:longint;
+   c6,c7,c8,c9:char;
+begin
+//init
+x2.val:=frcrange32(x,0,max16);
+
+//c=6,7
+v :=x2.bytes[0] div 16;
+v2:=x2.bytes[0]-(v*16);
+if (v <=9) then c6:=char(48+v ) else c6:=char(55+v );
+if (v2<=9) then c7:=char(48+v2) else c7:=char(55+v2);
+
+//c=8,9
+v :=x2.bytes[1] div 16;
+v2:=x2.bytes[1]-(v*16);
+if (v <=9) then c8:=char(48+v ) else c8:=char(55+v );
+if (v2<=9) then c9:=char(48+v2) else c9:=char(55+v2);
+
+//get
+result:=c8+c9+c6+c7;
+end;
+
+function hex8__int4(const x:string):longint;//26aug2025
 
    function xval(x:byte):longint;
    begin
@@ -10583,14 +11413,73 @@ var
    result:=(xval(strbyte1(x,xpos))*16) + xval(strbyte1(x,xpos+1));
    end;
 begin
-v.bytes[0]:=v1(7);
-v.bytes[1]:=v1(5);
-v.bytes[2]:=v1(3);
-v.bytes[3]:=v1(1);
-result:=v.val;
+tint4(result).bytes[0]:=v1(1);
+tint4(result).bytes[1]:=v1(3);
+tint4(result).bytes[2]:=v1(5);
+tint4(result).bytes[3]:=v1(7);
 end;
 
-function int4__hex8(const x:longint):string;//19may2025
+function int4__hex8(const x:longint):string;//26aug2025
+var
+   x4:tint4;
+   v,v2:longint;
+   c2,c3,c4,c5,c6,c7,c8,c9:char;
+begin
+//init
+x4.val:=x;
+
+//c=2,3
+v :=x4.bytes[0] div 16;
+v2:=x4.bytes[0]-(v*16);
+if (v <=9) then c2:=char(48+v ) else c2:=char(55+v );
+if (v2<=9) then c3:=char(48+v2) else c3:=char(55+v2);
+
+//c=4,5
+v :=x4.bytes[1] div 16;
+v2:=x4.bytes[1]-(v*16);
+if (v <=9) then c4:=char(48+v ) else c4:=char(55+v );
+if (v2<=9) then c5:=char(48+v2) else c5:=char(55+v2);
+
+//c=6,7
+v :=x4.bytes[2] div 16;
+v2:=x4.bytes[2]-(v*16);
+if (v <=9) then c6:=char(48+v ) else c6:=char(55+v );
+if (v2<=9) then c7:=char(48+v2) else c7:=char(55+v2);
+
+//c=8,9
+v :=x4.bytes[3] div 16;
+v2:=x4.bytes[3]-(v*16);
+if (v <=9) then c8:=char(48+v ) else c8:=char(55+v );
+if (v2<=9) then c9:=char(48+v2) else c9:=char(55+v2);
+
+//get
+result:=c2+c3+c4+c5+c6+c7+c8+c9;
+end;
+
+function hex8__int4RL(const x:string):longint;//26aug2025
+
+   function xval(x:byte):longint;
+   begin
+   case x of
+   48..57: result:=x-48;
+   65..70: result:=x-55;
+   97..102:result:=x-87;
+   else    result:=0;
+   end;//case
+   end;
+
+   function v1(xpos:longint):byte;
+   begin
+   result:=(xval(strbyte1(x,xpos))*16) + xval(strbyte1(x,xpos+1));
+   end;
+begin
+tint4(result).bytes[0]:=v1(7);
+tint4(result).bytes[1]:=v1(5);
+tint4(result).bytes[2]:=v1(3);
+tint4(result).bytes[3]:=v1(1);
+end;
+
+function int4__hex8RL(const x:longint):string;//26aug2025
 var
    x4:tint4;
    v,v2:longint;
@@ -10625,6 +11514,28 @@ if (v2<=9) then c9:=char(48+v2) else c9:=char(55+v2);
 
 //get
 result:=c2+c3+c4+c5+c6+c7+c8+c9;
+end;
+
+function int8__hex16(const x:comp):string;//26aug2025
+begin
+result:=int4__hex8(tcmp8(x).ints[0]) + int4__hex8(tcmp8(x).ints[1]);
+end;
+
+function hex16__int8(const x:string):comp;//26aug2025
+begin
+tcmp8(result).ints[0]:=hex8__int4( strcopy1(x,1,8) );
+tcmp8(result).ints[1]:=hex8__int4( strcopy1(x,9,8) );
+end;
+
+function int8__hex16RL(const x:comp):string;//26aug2025
+begin
+result:=int4__hex8RL(tcmp8(x).ints[1]) + int4__hex8RL(tcmp8(x).ints[0]);
+end;
+
+function hex16__int8RL(const x:string):comp;//26aug2025
+begin
+tcmp8(result).ints[0]:=hex8__int4RL( strcopy1(x,9,8) );
+tcmp8(result).ints[1]:=hex8__int4RL( strcopy1(x,1,8) );
 end;
 
 function low__hexchar(x:byte):char;
@@ -10904,7 +11815,63 @@ if (xdatalen>=1) and (xpos<=xdatalen) then for p:=xpos to xdatalen do if (xdata[
 except;end;
 end;
 
-function low__matchmask(const xline,xmask:string):boolean;//04nov2019
+
+//filter procs -----------------------------------------------------------------
+
+function filter__sort(const xfilterlist:string):string;
+var
+   a:tdynamicstring;
+   p:longint;
+   xout:string;
+
+   function mi(const x:string):boolean;
+   begin
+
+   result:=low__havechar(x,fesepX);
+
+   end;
+
+   function sa(const x:string):boolean;
+   begin
+
+   result:=(x<>'');
+   if result then xout:=xout+x+fesep;
+
+   end;
+
+begin
+
+//defaults
+result   :='';
+xout     :='';
+a        :=nil;
+
+try
+//init
+a        :=tdynamicstring.create;
+a.text   :=swapcharsb(xfilterlist,fesep,#10);
+a.sort(true);
+
+//multi-items -> not sorted order
+for p:=0 to pred(a.count) do if mi(a.value[p]) and sa(a.value[p]) then a.value[p]:='';
+
+//single-items -> in sorted order
+for p:=0 to pred(a.count) do if (a.svalue[p]<>feany) and sa(a.svalue[p]) then a.svalue[p]:='';
+
+//remaining items -> e.g. feany
+for p:=0 to pred(a.count) do if sa(a.svalue[p]) then a.svalue[p]:='';
+
+//get
+result:=xout;
+
+except;end;
+
+//free
+freeobj(@a);
+
+end;
+
+function filter__match(const xline,xmask:string):boolean;//18sep2025, 04nov2019
 label//Handles semi-complex masks (upto two "*" allowed in a xmask - 04nov2019
      //Superfast: between 20,000 (short ~14c) to 4,000 (long ~160c) comparisons/sec -> Intel atom 1.33Ghz
      //Accepts masks:
@@ -10984,12 +11951,12 @@ skipend:
 except;end;
 end;
 
-function low__matchmaskb(xline,xmask:string):boolean;//04nov2019
+function filter__matchb(const xline,xmask:string):boolean;//18sep2025, 04nov2019
 begin
-result:=low__matchmask(xline,xmask);
+result:=filter__match(xline,xmask);
 end;
 
-function low__matchmasklist(const xline,xmasklist:string):boolean;//04oct2020
+function filter__matchlist(const xline,xmasklist:string):boolean;//18sep2025, 04oct2020
 var//Note: masklist => "*.bmp;*.jpg;*.jpeg" etc
    lp,p,xlen:longint;
    str1:string;
@@ -11013,7 +11980,7 @@ if bol1 or (p=xlen) then
    if bol1 then str1:=strcopy1(xmasklist,lp,p-lp) else str1:=strcopy1(xmasklist,lp,p-lp+1);
    lp:=p+1;
    //get
-   if (str1<>'') and low__matchmask(xline,str1) then
+   if (str1<>'') and filter__match(xline,str1) then
       begin
       result:=true;
       break;
@@ -11023,10 +11990,6 @@ end;//p
 except;end;
 end;
 
-function low__matchmasklistb(xline:string;var xmasklist:string):boolean;//04oct2020
-begin
-result:=low__matchmasklist(xline,xmasklist);
-end;
 
 function low__size(x:comp;xstyle:string;xpoints:longint;xsym:boolean):string;//01apr2024:plus support, 10feb2024: created
 var
@@ -11514,6 +12477,27 @@ b.bytes[3]:=a.bytes[0];
 s:=b.val;
 end;
 
+function strm(const sfullname,spartialname:string;var vs:string;var v:longint):boolean;//05oct2025
+begin
+
+result:=strmatch( spartialname, strcopy1(sfullname,1,low__len(spartialname)) );
+if result then
+   begin
+
+   vs:=strcopy1(sfullname,low__len(spartialname)+1,low__len(sfullname));
+   v :=strint32(vs);
+
+   end
+else
+   begin
+
+   vs:='';
+   v :=0;
+
+   end;
+
+end;
+
 function strlow(const x:string):string;//make string lowercase - 26apr2025
 var
    p:longint;
@@ -11880,95 +12864,35 @@ striptrailingrcodes(result);
 except;end;
 end;
 
-function freeobj(x:pobject):boolean;//22jun2024: Updated for GUI support, 09feb2024: Added support for "._rtmp" & mustnil, 02feb2021, 05may2020, 05DEC2011, 14JAN2011, 15OCT2004
+function freeobj(x:pobject):boolean;//01sep2025, 22jun2024: Updated for GUI support, 09feb2024: Added support for "._rtmp" & mustnil, 02feb2021, 05may2020, 05DEC2011, 14JAN2011, 15OCT2004
 var
    xmustnil:boolean;
-{//was:
-   procedure xbasicthreadstop;
-   label
-      redo;
-   var
-      aref:comp;
-      a:tbasicthreadstop;
-      p:longint;
-   begin
-   try
-   //defaults
-   a:=(x^ as tbasicthreadstop);
-   if zznil(a,2051) then exit;
-   //muststop
-   if a.stopping then
-      begin
-      x^:=nil;//nil only -> since another copy is already shuting this object down - 20feb2021
-      exit;
-      end;
-   //signal thread to stop
-   aref:=ms64+60000;//60sec timeout
-   a.muststop;
-   //timer is caught in a VCL event -> don't wait - 10may2021
-   if a.vcl_waiting then
-      begin
-      x^:=nil;//nil only -> since another copy is already shuting this object down - 20feb2021
-      a.mustfree;
-      exit;
-      end;
-   //wait for thread to finish
-   redo:
-   if (not a.stopped) and (aref>=ms64) then
-      begin
-      app__processallmessages;
-      win____sleep(20);
-      goto redo;
-      end;
-   //successful
-   x^.free;
-   x^:=nil;
-   except;end;
-   end;
-{}//yyyyyyyyyyyyyyy
 begin//Note: as a function this proc supports inline processing -> e.g. if a and b and freeobj() and d then -> which uses LESS code
+
+//pass-thru
 result:=true;
 
 try
 //check
 if (x=nil) or (x^=nil)  then exit;
 
-//special cases
-try
-
-{$ifdef gui}
-//if (x^ is tcommonform)       then (x^ as tcommonform).visible:=false
-{$endif}
-
-
-{$ifdef jpeg}
-//if (x^ is tjpegimage)         then track__inc(satJpegimage,-1);
-{$endif}
-except;end;
-
-
-
 //-- shutdown handlers ---------------------------------------------------------
-//tthread based
-//was: if (x^ is tbasictimer)  then xbasictimer
-//was: if (x^ is tbasicthreadstop) then xbasicthreadstop//21may2021
-//general purpose shutdown handler
-//else
-   begin
-   //mustnil - Special case when the pointer refers to the "_rtmp" var on the object itself. This is used by "str__ptr()" to
-   //          cache the pointer of a floating tstr8/tstr9 object, from a call like "low__tofile64('myfile.dat',str__ptr(vars8.data),e)".
-   //          A call to "vars8.data" returns a tstr8 object with data, which must be destroyed by the proc it's passed to, in this case low__tofile64.
-   //          It is not safe to pass this directly, so tstr__ptr() stores it in "_rtmp" on the object in question - 09feb2024
-   xmustnil:=true;
-   if (x^ is tobjectex) and (x=@(x^ as tobjectex).__cacheptr) then xmustnil:=false;
 
-   //free the object
-   x^.free;
-   zzdel(x^);//Note: Must immediately follow the object's "free" proc - 04may2021
+//mustnil - Special case when the pointer refers to the "_rtmp" var on the object itself. This is used by "str__ptr()" to
+//          cache the pointer of a floating tstr8/tstr9 object, from a call like "low__tofile64('myfile.dat',str__ptr(vars8.data),e)".
+//          A call to "vars8.data" returns a tstr8 object with data, which must be destroyed by the proc it's passed to, in this case low__tofile64.
+//          It is not safe to pass this directly, so tstr__ptr() stores it in "_rtmp" on the object in question - 09feb2024
 
-   //safe to set the owner var to nil
-   if xmustnil then x^:=nil;
-   end;
+xmustnil:=true;
+if (x^ is tobjectex) and (x=@(x^ as tobjectex).__cacheptr) then xmustnil:=false;
+
+//free the object
+x^.free;
+zzdel(x^);//Note: Must immediately follow the object's "free" proc - 04may2021
+
+//safe to set the owner var to nil
+if xmustnil then x^:=nil;
+
 except;end;
 end;
 
@@ -12141,6 +13065,11 @@ if (v<=xval) then
 //set
 if xminus then result:=-xoutval else result:=xoutval;
 except;end;
+end;
+
+function add32(xval,xval2:comp):longint;//01sep2025
+begin
+result:=restrict32(add64(xval,xval2));
 end;
 
 function sub32(xval,xval2:comp):longint;//30sep2022, subtract
@@ -12775,6 +13704,28 @@ result:=false;
 try
 if (xlen<=0) then x:='' else setlength(x,xlen);
 result:=true;
+except;end;
+end;
+
+function low__setlen0(var x:string;xlen:longint):boolean;//clears memory to #0
+var
+   p:longint;
+begin
+result:=false;
+
+try
+
+if (xlen>=1) then
+   begin
+
+   setlength(x,xlen);
+   for p:=1 to xlen do x[p-1+stroffset]:=#0;
+
+   end
+else x:='';
+
+result:=true;
+
 except;end;
 end;
 
@@ -13535,20 +14486,6 @@ end;
 
 
 //app procs --------------------------------------------------------------------
-function mem__alloc(xsize:longint):pointer;
-begin
-result:=win____HeapAlloc(win____GetProcessHeap,0,xsize);
-end;
-
-function mem__realloc(xptr:pointer;xsize:longint):pointer;
-begin
-result:=win____HeapReAlloc(win____GetProcessHeap,0,xptr,xsize);
-end;
-
-function mem__free(xptr:pointer):boolean;
-begin
-result:=win____HeapFree(win____GetProcessHeap,0,xptr);
-end;
 
 function app__adminlevel:boolean;
 begin
@@ -13567,13 +14504,17 @@ end;
 
 function app__folder3(xsubfolder:string;xcreate,xalongsideexe:boolean):string;//15jan2024
 begin
+
 //xalongsideexe=false="exe path\", true="exe path\<exe name>_storage\"
 result:=io__asfolder(io__extractfilepath(io__exename));
 if not xalongsideexe then result:=io__asfolder(result+io__extractfilename(io__exename)+'_storage');
+
 //subfolder
 if (xsubfolder<>'') then result:=io__asfolder(result+xsubfolder);
+
 //create
 if xcreate then io__makefolder(result);
+
 end;
 
 function app__rootfolder:string;//14feb2025
@@ -13593,7 +14534,12 @@ end;
 
 function app__settingsfile(xname:string):string;
 begin
-result:=app__subfolder('settings')+io__extractfilename(xname);
+result:=app__settingsfile2(xname,true);
+end;
+
+function app__settingsfile2(xname:string;xcreatefolder:boolean):string;//23oct2025
+begin
+result:=app__folder3('settings',xcreatefolder,false)+io__extractfilename(xname);
 end;
 
 procedure app__breg(xname:string;xdefval:boolean);//register boolean for settings
@@ -14047,38 +14993,55 @@ end;//p
 except;end;
 end;
 
-procedure app__makeDPIaware;//to be called ONLY from within "app__boot" proc - 27nov2024
-type
-   TSetProcessDpiAwarenessContext=function(inDPI_AWARENESS_CONTEXT:dword):lresult stdcall;
-var//Note: run this proc before calling any other DPI aware api's or UI construction as per MS - 27nov2024
-   a:hmodule;
-   b:TSetProcessDpiAwarenessContext;
+function app__GUIresources:longint;//28aug2025
 begin
-try
-{$ifdef gui}
-a:=win____LoadLibraryA(pchar('user32.dll'));
-if (a<>0) then
-   begin
-   b:=win____GetProcAddress(a,PAnsiChar('SetProcessDpiAwarenessContext'));
-   if assigned(b) then system_monitors_dpiAwareV2:=(0<>b(-4));
-   end;
-{$endif}
-except;end;
+
+case win__ok(vwin2____GetGuiResources) of
+true:result:=win2____GetGuiResources( win____GetCurrentProcess, 0) ;
+else result:=-1;
+end;//case
+
 end;
 
-procedure app__boot(xEventDriven,xFileCache,xGUImode:boolean);
+procedure app__boot(xEventDriven,xFileCache,xGUImode:boolean);//28sep2025, 19aug2025
 begin
 try
 
 //check
 if (system_runstyle>rsBooting) then exit else system_runstyle:=rsUnknown;
 
+
+//------------------------------------------------------------------------------
+//-- Thread Safe Memory --------------------------------------------------------
+
+//init dynamic loading for Win32 api calls
+win__init;
+
+//start com system -> required on some systems to be loaded
+win____CoInitializeEx(nil,2);
+
+//Enable Delphi 3 thread safe memory handling
+IsMultiThread :=true;
+
+//warn if system is running statically link Win32 procs
+if win____emergencyfallback_engaged then
+   begin
+
+   showerror('Warning:'+rcode+rcode+'Codebase is running in emergency fallback mode and is not Windows 95/98 compatible.');
+
+   end;
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
 //critical - make app DPI aware per monitor V2 - for Win10 (late) and Win 11 - 27nov2024
-app__makeDPIaware;
+if win__ok(vwin2____SetProcessDpiAwarenessContext) then system_monitors_dpiAwareV2:=(0<>win2____SetProcessDpiAwarenessContext(-4));
 
 //init
 system_eventdriven:=xeventdriven;
-system_filecache_limit:=frcmax32(low__aorb(20,high(system_filecache_slot)+1,xFileCache),high(system_filecache_slot)+1);//29apr2024
+filecache__setenable(xFileCache);//28sep2025
+
 
 //GUI
 if xGUImode then
@@ -14103,6 +15066,10 @@ else
       app__run;//run the app as a console app
       end;
    end;
+
+
+//stop com system
+win____CoUninitialize;
 
 except;end;
 end;
@@ -14169,12 +15136,24 @@ if (sizeof(ttestalign)<>8) then xadd(true,  '{$align on} Align Record Fields');/
 {$ifopt h-} xadd(true,  '{$H+} Huge strings');{$endif}
 {$ifopt j+} xadd(false, '{$J-} Assignable typed constants (J)');{$endif}
 
-if (str1<>'') then showbasic('Condition for maximum excution speed and compatibility not set.  Change the following Delphi 3 compiler options:'+rcode+rcode+str1);
+if (str1<>'') then
+   begin
+
+   showerror('-- Warning --'+rcode+rcode+'Condition for maximum excution speed and compatibility not set.  Change the following Delphi 3 compiler options:'+rcode+rcode+str1);
+
+   end;
+
+if (not ismultithread) then
+   begin
+
+   showerror('-- Critical Warning --'+rcode+rcode+'Condition for stable multi-threading is not set. The IsMultiThread option must be set to TRUE within app__boot() proc to avoid memory leaks and corruption.'+rcode+rcode+'Example:'+rcode+'IsMultiThread:=true;');
+
+   end;
 
 except;end;
 end;
 
-procedure app__run;//run - 17jun2025, 19aug2024: adjust GUI start position
+procedure app__run;//run - 07sep2025, 17jun2025, 19aug2024: adjust GUI start position
 label
    redo,loop,skipremove,shutdown;
 var
@@ -14260,7 +15239,6 @@ for p:=0 to high(systrack_obj) do systrack_obj[p]:=nil;
 for p:=0 to high(systrack_ptr) do systrack_ptr[p]:=nil;
 {$endif}
 
-
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //idle trackers - 25jan2025 ----------------------------------------------------
@@ -14275,7 +15253,6 @@ syswheeltime:=ms64;//mouse wheel
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //system stats -----------------------------------------------------------------
-track_bytes:=0;
 track_total:=0;
 
 for p:=0 to (track_limit-1) do
@@ -14334,12 +15311,6 @@ painttimer:=0;
 xlastvisible:=scn__visible;
 //.std in/out
 system_stdin:=low__stdin;
-
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//system threads init - 16oct2021 ----------------------------------------------
-systhread__initall;
 
 
 //------------------------------------------------------------------------------
@@ -14415,6 +15386,7 @@ gui__initing:=true;
 
 //.start the GUI library, load settings and sync, then CREATE gui app - 19aug2024
 gossgui__start;//load controls and settings
+
 visync;//sync settings before app is created
 
 if not xremove then app__create;//create the app
@@ -14423,15 +15395,19 @@ if not xremove then app__create;//create the app
 if xremove then
    begin
    app__remove;
+
    {$ifdef gui}
    //.reset system settings to defaults -> remove any start/desktop/automatic start links
    if xguimode then
       begin
+
       app__savecursor('default',nil);
       siLoadsyssettingsfrom(nil);
       viSyncandsave2(true);
+
       end;
    {$endif}
+
    goto skipremove;
    end;
 
@@ -14460,8 +15436,13 @@ if (app__gui<>nil) then
 {$endif}
 
 
-
 //------------------------------------------------------------------------------
+//.compiler check - 15jul2025
+
+app__checkCompilerOptionsForMaxSpeed;
+
+
+
 //------------------------------------------------------------------------------
 //app is now running -----------------------------------------------------------
 //.first timer
@@ -14479,12 +15460,12 @@ if system_eventdriven then win____settimer(app__wproc.window,1,system_timerinter
 //------------------------------------------------------------------------------
 
 
-//.compiler check - 15jul2025
-app__checkCompilerOptionsForMaxSpeed;
-
-
 //.main program loop
 redo:
+
+//.sync less demanding timer proc "slowms64"
+system_slowms64.scan :=0;
+system_slowms64.ms   :=ms64;
 
 //.pause
 if system_pause then
@@ -14633,31 +15614,12 @@ str__free(@system_log_cache);
 //disable any custom timing resolution - 14mar2024
 root__stoptimeperiod;
 
-//system threads stopall - 26apr2025;
-systhread__stopall(true);
-
 //remaining library stop procs
 gossio__stop;
 gossimg__stop;//temp buffers are destroyed - so do close to last
 gosswin__stop;//25jan2025
 gossroot__stop;
 
-
-
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//wait a short moment for ALL threads to shutdown - 26may2021
-xref64:=ms64+20000;
-while true do
-begin
-if (track_active[satThread]<=0) or (ms64>=xref64) then break
-else
-   begin
-   win____sleep(50);
-   app__processallmessages;
-   end;
-end;//loop
 
 
 //------------------------------------------------------------------------------
@@ -14923,7 +15885,7 @@ end;
 
 function app__cansetwindowalpha:boolean;
 begin
-result:=assigned(system_monitors_SetLayeredWindowAttributes);
+result:=win__ok(vwin2____SetLayeredWindowAttributes);
 end;
 
 function app__setwindowalpha(xwindow:hwnd;xalpha:longint):boolean;//27nov2024: sets the alpha level of window, also automatically upgrades window's extended style to support alpha values
@@ -14954,8 +15916,8 @@ if app__cansetwindowalpha then
       end;
 
    //set alpha value
-   if not assigned(system_monitors_SetLayeredWindowAttributes) then goto skipend;
-   if (0=system_monitors_SetLayeredWindowAttributes(xwindow,0,byte(xalpha),2)) then goto skipend;
+   if not win__ok(vwin2____SetLayeredWindowAttributes) then goto skipend;
+   if (0=win2____SetLayeredWindowAttributes(xwindow,0,byte(xalpha),2)) then goto skipend;
 
    //successful
    result:=true;
@@ -14965,7 +15927,7 @@ skipend:
 except;end;
 end;
 
-function app__monitorProc(unnamedParam1:HMONITOR;unnamedParam2:HDC;unnamedParam3:pwinrect;unnamedParam4:LPARAM):lresult; stdcall;//26nov2024
+function app__monitorProc(unnamedParam1:HMONITOR;unnamedParam2:HDC;unnamedParam3:pwinrect;unnamedParam4:LPARAM):lresult; stdcall;//26sep2025, 26nov2024
 var
    m:tmonitorinfoex;
    i:longint;
@@ -14981,18 +15943,21 @@ result:=1;
 
 {$ifdef gui}
 try
-if assigned(system_monitors_GetMonitorInfoA) then
+
+if win__ok(vwin2____GetMonitorInfo) then
    begin
    //init
    low__cls(@m,sizeof(m));
    m.cbSize:=sizeof(m);
 
    //get
-   if (0<>system_monitors_GetMonitorInfoA(unnamedParam1,@m)) then
+   if (0<>win2____GetMonitorInfo(unnamedParam1,@m)) then
       begin
+
       i:=system_monitors_count;
       if (i<=high(system_monitors_area)) then
          begin
+
          system_monitors_hmonitor[i] :=unnamedParam1;
          system_monitors_area[i]     :=m.rcMonitor;
          system_monitors_workarea[i] :=m.rcWork;
@@ -15006,59 +15971,29 @@ if assigned(system_monitors_GetMonitorInfoA) then
          dec(system_monitors_workarea[i].bottom);
 
          //scale
-         if (not assigned(system_monitors_GetDpiForMonitor)) or (0<>system_monitors_GetDpiForMonitor(unnamedParam1,0,v,v2)) then v:=100;
+         if (0<>win2____GetDpiForMonitor(unnamedParam1,0,v,v2)) then v:=100;
          system_monitors_scale[i]:=v;//not sure but perhaps: 140=> [140]/96 = 1.45 (150%) and [120]/96=1.25 (125%) etc...
+
          end;
+
       end;
 
    end;//if
 except;end;
 {$endif}
+
 end;
 
 procedure monitors__sync;//06jan2025, 26nov2024
 label
    skipend;
 var
-   a,a2:hmodule;
    p:longint;
 begin
 {$ifdef gui}
 
-//attempt to load the lib and connect the "system_monitor_EnumDisplayDevicesA" proc - as windows 95 does not support this proc it must be done at runtime
-try
-if not system_monitors_init then
-   begin
-   system_monitors_init:=true;
-   a:=win____LoadLibraryA(pchar('user32.dll'));
-   try
-   if (a<>0) then
-      begin
-      //load proc "EnumDisplayMonitors"
-      system_monitors_EnumDisplayMonitors:=win____GetProcAddress(a,PAnsiChar('EnumDisplayMonitors'));
-      if assigned(system_monitors_EnumDisplayMonitors) then
-         begin
-         //load proc "GetMonitorInfoA"
-         system_monitors_GetMonitorInfoA:=win____GetProcAddress(a,PAnsiChar('GetMonitorInfoA'));
-
-         //load proc "GetScaleFactorForMonitor"
-         a2:=win____LoadLibraryA(pchar('Shcore.dll'));
-
-         //load proc "GetScaleFactorForMonitor"
-         if (a2<>0) then system_monitors_GetDpiForMonitor:=win____GetProcAddress(a2,PAnsiChar('GetDpiForMonitor'));
-         end;
-      end;
-   except;end;
-
-   try
-   //load proc "SetLayeredWindowAttributes" for window alpha layer support
-   if (a<>0) then system_monitors_SetLayeredWindowAttributes:=win____GetProcAddress(a,PAnsiChar('SetLayeredWindowAttributes'));
-   except;end;
-   end;
-except;end;
-
 //get list of monitor areas & workareas ----------------------------------------
-try
+
 //clear
 system_monitors_primaryindex  :=0;
 system_monitors_count         :=0;
@@ -15066,31 +16001,34 @@ system_monitors_totalarea     :=area__make(0,0,0,0);
 system_monitors_totalworkarea :=area__make(0,0,0,0);
 
 //get
-if assigned(system_monitors_GetMonitorInfoA) and assigned(system_monitors_EnumDisplayMonitors) then
+if win__ok(vwin2____GetMonitorInfo) and win__ok(vwin2____EnumDisplayMonitors) then
    begin
-   system_monitors_EnumDisplayMonitors(0, nil, @app__monitorProc, 0);
+
+   win2____EnumDisplayMonitors(0, nil, @app__monitorProc, 0);
+
    end;
-except;end;
+
 
 //fallback -> something went wrong or the OS doesn't support the api procs, e.g. Windows 95
-try
 if (system_monitors_count<=0) then
    begin
+
    system_monitors_hmonitor[0] :=0;
    system_monitors_area[0]     :=area__make(0,0,win____getsystemmetrics(SM_CXSCREEN_primarymonitor),win____getsystemmetrics(SM_CYSCREEN_primarymonitor));//fixed for Win95 -> win95 doesn't support "SM_CXVIRTUALSCREEN" or "SM_CYVIRTUALSCREEN" - 06jan2025
    win____systemparametersinfo(SPI_GETWORKAREA,0,@system_monitors_workarea[0],0);
    system_monitors_primary[0]  :=true;
    system_monitors_count:=1;
+
    //zero based
    dec(system_monitors_area[0].right);
    dec(system_monitors_area[0].bottom);
    dec(system_monitors_workarea[0].right);
    dec(system_monitors_workarea[0].bottom);
+
    end;
-except;end;
 
 //sync -------------------------------------------------------------------------
-try
+
 //init
 system_monitors_totalarea     :=system_monitors_area[0];
 system_monitors_totalworkarea :=system_monitors_workarea[0];
@@ -15098,6 +16036,7 @@ system_monitors_totalworkarea :=system_monitors_workarea[0];
 //get
 for p:=0 to (system_monitors_count-1) do
 begin
+
 if system_monitors_primary[p] then system_monitors_primaryindex:=p;
 
 //.totalarea
@@ -15111,19 +16050,21 @@ if (system_monitors_workarea[p].left<system_monitors_totalworkarea.left)     the
 if (system_monitors_workarea[p].right>system_monitors_totalworkarea.right)   then system_monitors_totalworkarea.right:=system_monitors_workarea[p].right;
 if (system_monitors_workarea[p].top<system_monitors_totalworkarea.top)       then system_monitors_totalworkarea.top:=system_monitors_workarea[p].top;
 if (system_monitors_workarea[p].bottom>system_monitors_totalworkarea.bottom) then system_monitors_totalworkarea.bottom:=system_monitors_workarea[p].bottom;
+
 end;//p
-except;end;
+
 
 {$else}
 system_monitors_hmonitor[0]   :=0;
 system_monitors_area[0]       :=area__make(0,0,640-1,480-1);
 system_monitors_workarea[0]   :=system_monitors_area[0];
 system_monitors_primary[0]    :=true;
-system_monitors_count:=1;
+system_monitors_count         :=1;
 
 system_monitors_totalarea     :=system_monitors_area[0];
 system_monitors_totalworkarea :=system_monitors_workarea[0];
 {$endif}
+
 end;
 
 function monitors__count:longint;
@@ -15523,16 +16464,20 @@ result:=area__make(0,0,-1,-1);
 end;
 
 function maxarea:twinrect;//02dec2023, 27jul2021
+const
+   xvoid=100000;//100k
 begin//allow for graphics sub-procs to have room with their maths -> don't push it too near to "max32-1" - 28jul2021
-result:=area__make(0,0,max32-100000,max32-100000);//allow 100k numeric void
+result:=area__make(0,0,max32-xvoid,max32-xvoid);//allow numeric void
 end;
 
-function noarea:twinrect;//sets area to maximum inverse values - 19nov2023
+function noarea:twinrect;//sets area to maximum inverse values - 28aug2025, 19nov2023
+const
+   xvoid=100000;//100k
 begin
-result.right    :=min32;
-result.left     :=max32;
-result.top      :=max32;
-result.bottom   :=min32;
+result.right    :=min32+xvoid;
+result.left     :=max32-xvoid;
+result.top      :=max32-xvoid;
+result.bottom   :=min32+xvoid;
 end;
 
 function validrect(x:twinrect):boolean;
@@ -15570,7 +16515,7 @@ begin
 result:=(xnew.left>=x.left) and (xnew.right<=x.right) and (xnew.top>=x.top) and (xnew.bottom<=x.bottom);
 end;
 
-function low__point(x,y:longint):tpoint;//09apr2024
+function low__point(const x,y:longint):tpoint;//09apr2024
 begin
 result.x:=x;
 result.y:=y;
@@ -15667,7 +16612,7 @@ begin
 result:=area__make(0,0,-1,-1);
 end;
 
-function area__valid(x:twinrect):boolean;//09may2025
+function area__valid(const x:twinrect):boolean;//09may2025
 begin
 result:=(x.left<=x.right) and (x.top<=x.bottom);
 end;
@@ -15677,17 +16622,17 @@ begin
 result:=(x.left=y.left) and (x.right=y.right) and (x.top=y.top) and (x.bottom=y.bottom);
 end;
 
-function area__within(z:twinrect;x,y:longint):boolean;
+function area__within(const z:twinrect;const x,y:longint):boolean;
 begin
 result:=(z.left<=z.right) and (z.top<=z.bottom) and (x>=z.left) and (x<=z.right) and (y>=z.top) and (y<=z.bottom);
 end;
 
-function area__within2(z:twinrect;xy:tpoint):boolean;
+function area__within2(const z:twinrect;const xy:tpoint):boolean;
 begin
 result:=(z.left<=z.right) and (z.top<=z.bottom) and (xy.x>=z.left) and (xy.x<=z.right) and (xy.y>=z.top) and (xy.y<=z.bottom);
 end;
 
-function area__make(xleft,xtop,xright,xbottom:longint):twinrect;
+function area__make(const xleft,xtop,xright,xbottom:longint):twinrect;
 begin
 result.left   :=xleft;
 result.top    :=xtop;
@@ -15695,7 +16640,7 @@ result.right  :=xright;
 result.bottom :=xbottom;
 end;
 
-function area__makewh(xleft,xtop,xwidth,xheight:longint):twinrect;//28jul2025
+function area__makewh(const xleft,xtop,xwidth,xheight:longint):twinrect;//28jul2025
 begin
 result.left   :=xleft;
 result.top    :=xtop;
@@ -15703,7 +16648,7 @@ result.right  :=xleft + xwidth-1;
 result.bottom :=xtop  + xheight-1;
 end;
 
-function area__torect(x:twinrect):twinrect;
+function area__torect(const x:twinrect):twinrect;
 begin
 result.left   :=x.left;
 result.top    :=x.top;
@@ -15734,7 +16679,7 @@ if (result.right<result.left) or (result.bottom<result.top) then result:=nilrect
 except;end;
 end;
 
-function area__grow(x:twinrect;xby:longint):twinrect;//07apr2021
+function area__grow(const x:twinrect;const xby:longint):twinrect;//07apr2021
 begin
 result.left    :=x.left  -xby;
 result.right   :=x.right +xby;
@@ -15742,7 +16687,7 @@ result.top     :=x.top   -xby;
 result.bottom  :=x.bottom+xby;
 end;
 
-function area__grow2(x:twinrect;xby,yby:longint):twinrect;//14jul2025
+function area__grow2(const x:twinrect;const xby,yby:longint):twinrect;//14jul2025
 begin
 result.left    :=x.left  -xby;
 result.right   :=x.right +xby;
@@ -15750,7 +16695,7 @@ result.top     :=x.top   -yby;
 result.bottom  :=x.bottom+yby;
 end;
 
-function area__str(x:twinrect):string;
+function area__str(const x:twinrect):string;
 begin
 result:='rect('+intstr32(x.left)+','+intstr32(x.top)+','+intstr32(x.right)+','+intstr32(x.bottom)+') and '+intstr32(x.right-x.left+1)+'w x '+intstr32(x.bottom-x.top+1)+'h';
 end;
@@ -15784,6 +16729,16 @@ else result:=false;
 end;
 
 function low__setint(var xdata:longint;xnewvalue:longint):boolean;
+begin
+if (xnewvalue<>xdata) then
+   begin
+   result:=true;
+   xdata:=xnewvalue;
+   end
+else result:=false;
+end;
+
+function low__setdbl(var xdata:double;xnewvalue:double):boolean;
 begin
 if (xnewvalue<>xdata) then
    begin
@@ -15905,7 +16860,7 @@ if (result<min) then result:=min;
 if (result>max) then result:=max;
 end;
 
-function to32bit(x:string):longint;//21jun2024, 29AUG2007
+function str__to32(const x:string):longint;//02oct2025, 21jun2024, 29AUG2007
 var
    a:tint4;
 begin
@@ -15920,7 +16875,7 @@ if (low__len(x)>=4) then
 else result:=0;
 end;
 
-function from32bit(x:longint):string;//21jun2024, 29AUG2007
+function str__from32(x:longint):string;//02oct2025, 21jun2024, 29AUG2007
 var
    a:tint4;
 begin
@@ -16109,6 +17064,26 @@ begin
 x:=x-xby;
 end;
 
+procedure inc132(var x:longint);
+begin
+if (x<max32) then inc(x);
+end;
+
+procedure dec132(var x:longint);
+begin
+if (x>min32) then dec(x);
+end;
+
+procedure inc164(var x:comp);
+begin
+if (x<max64) then x:=x+1;
+end;
+
+procedure dec164(var x:comp);
+begin
+if (x>min64) then x:=x-1;
+end;
+
 function strint64(x:string):comp;//01nov2024, 05jun2021, 28jan2017
 begin
 result:=int__fromstr(x);
@@ -16196,6 +17171,7 @@ var//Speed   : ~1.07 million cycles/sec vs "floattostrf" ~2.66 million cycles/se
 
    procedure radd(x:char);
    begin
+
    if not rok then
       begin
       result:='000000000000000000000';//21 -> space for 18 digits + "-" symbol + "." decimal point + plus extra space for safety
@@ -16205,6 +17181,7 @@ var//Speed   : ~1.07 million cycles/sec vs "floattostrf" ~2.66 million cycles/se
    inc(rlen);
    result[rlen-1+stroffset]:=x;
    if sforce0 and (x<>'0') then rlastnonzero:=rlen;
+
    end;
 
    procedure xscan(xmin:comp);
@@ -16213,8 +17190,10 @@ var//Speed   : ~1.07 million cycles/sec vs "floattostrf" ~2.66 million cycles/se
    begin
    if (sv>=xmin) then
       begin
+
       for p:=9 downto 1 do
       begin
+
       if (sv>=(p*xmin)) then
          begin
          sv:=sv-(p*xmin);
@@ -16230,7 +17209,9 @@ var//Speed   : ~1.07 million cycles/sec vs "floattostrf" ~2.66 million cycles/se
             inc(rlen);
             end;
          end;
+
       end;//p
+
       end
    else if (slen>=1) or sforce0 then
       begin
@@ -16238,15 +17219,17 @@ var//Speed   : ~1.07 million cycles/sec vs "floattostrf" ~2.66 million cycles/se
       inc(rlen);
       end;
    end;
+
 begin
+
 //defaults
-result:='0';
-rok   :=false;
-rlen  :=0;
-alen  :=0;
-blen  :=0;
-rlastnonzero:=0;
-rseplen:=0;
+result       :='0';
+rok          :=false;
+rlen         :=0;
+alen         :=0;
+blen         :=0;
+rlastnonzero :=0;
+rseplen      :=0;
 
 //check
 if (x=0) then exit;
@@ -16285,8 +17268,8 @@ xscan(1.0);
 alen:=slen;
 
 //.fraction -> right of decimal point, stored in "bstr" -> 1-18 digits
-slen   :=0;
-sforce0:=true;
+slen    :=0;
+sforce0 :=true;
 if xallowdecimal then blen:=18-alen;
 
 case blen of
@@ -16315,10 +17298,11 @@ end;
 //.insert decimal point
 if (blen>=1) then
    begin
+
    if (alen<=0) then radd('0');
    radd(char(xsep));
-   rseplen     :=rlen;
-   rlastnonzero:=rlen;
+   rseplen      :=rlen;
+   rlastnonzero :=rlen;
 
    if (blen>=18) then xscan(100000000000000000.0);
    if (blen>=17) then xscan(10000000000000000.0);
@@ -16338,18 +17322,24 @@ if (blen>=1) then
    if (blen>=3)  then xscan(100.0);
    if (blen>=2)  then xscan(10.0);
    if (blen>=1)  then xscan(1.0);
+
    end;
 
 //set -> remove trailing zeros on right of decimal point
 if (rlen>=1) then
    begin
+
    if (blen>=1) then
       begin
+
       if (rseplen=rlastnonzero) then result:=strcopy1(result,1,rseplen-1) else result:=strcopy1(result,1,rlastnonzero);
+
       end
    else result:=strcopy1(result,1,rlen);
+
    end
 else result:='0';//should never be required -> but here just in case
+
 end;
 
 function float__fromstr(x:string):extended;//31oct2024: system independent
@@ -16613,6 +17603,347 @@ except;end;
 end;
 
 
+//resource support procs -------------------------------------------------------
+function res__listenglish__langcode(xindex:longint;var xlabel:string;var xlangcode:longint):boolean;
+var
+   xcaption:string;
+begin
+
+result:=res__listenglish__langcode2(xindex,xcaption,xlabel,xlangcode);
+
+end;
+
+function res__listenglish__langcode2(xindex:longint;var xcaption,xlabel:string;var xlangcode:longint):boolean;
+const
+   lEnglish  ='English';
+   lFrench   ='French';
+   lGerman   ='German';
+   lItalian  ='Italian';
+   lRussian  ='Russian';
+   lSpanish  ='Spanish';
+
+   procedure m(const dcaption0,dcaption1,dlabel:string;const dlangcode:longint);
+   begin
+
+   xcaption  :=strdefb(dcaption0+insstr(' - ',(dcaption0<>'') and (dcaption1<>''))+dcaption1,dlabel);
+   xlabel    :=dlabel;
+   xlangcode :=dlangcode;
+   result    :=true;
+
+   end;
+
+begin
+
+//defaults
+result    :=false;
+xlabel    :='';
+xlangcode :=0;
+
+//get
+case xindex of
+0 :m(lEnglish,'Neutral','english-neutral',9);
+1 :m(lEnglish,'Australia','english-australia',3081);
+2 :m(lEnglish,'Belize','english-belize',10249);
+3 :m(lEnglish,'Canada','english-canada',4105);
+4 :m(lEnglish,'Caribbean','english-caribbean',9225);
+5 :m(lEnglish,'Ireland','english-ireland',6153);
+6 :m(lEnglish,'India','english-india',16393);
+7 :m(lEnglish,'Jamaica','english-jamaica',8201);
+8 :m(lEnglish,'NZ','english-nz',5129);
+9 :m(lEnglish,'Philippines','english-philippines',13321);
+10:m(lEnglish,'South Africa','english-south-africa',7177);
+11:m(lEnglish,'Trinidad','english-trinidad',11273);
+12:m(lEnglish,'UK','english-uk',2057);
+13:m(lEnglish,'US','english-us',1033);
+14:m(lEnglish,'Zimbabwe','english-zimbabwe',12297);
+15:m(lFrench,'France','french-france',1036);
+16:m(lGerman,'Germany','german-germany',1031);
+17:m(lItalian,'Italy','italian-italy',1040);
+18:m('Neutral','Default','neutral-default',1024);
+19:m(lRussian,'Russia','russian-russia',1049);
+20:m(lSpanish,'Spain','spanish-spain',1034);
+21:m('Unicode','UTF-8','unicode-utf-8',0);
+end;//case
+
+end;
+
+function res__findlangcode(xname:string):longint;
+var
+   xlabel:string;
+   p,xlangcode:longint;
+begin
+
+//defaults
+result:=0;
+
+//get
+for p:=0 to max32 do
+begin
+
+if not res__listenglish__langcode(p,xlabel,xlangcode) then break;
+
+if strmatch(xname,xlabel) then
+   begin
+
+   result:=xlangcode;
+   break;
+
+   end;
+
+end;//p
+
+end;
+
+function res__findlangname(xcode:longint):string;
+var
+   xlabel:string;
+   p,xlangcode:longint;
+begin
+
+//defaults
+result:='neutral-neutral';
+
+//get
+for p:=0 to max32 do
+begin
+
+if not res__listenglish__langcode(p,xlabel,xlangcode) then break;
+
+if (xcode=xlangcode) then
+   begin
+
+   result:=xlabel;
+   break;
+
+   end;
+
+end;//p
+
+end;
+
+function res__findlanginfo(const scode:longint;var xcaption,xlabel:string;var xcode,xindex:longint):boolean;//14sep2025
+var
+   p:longint;
+begin
+
+//defaults
+result    :=false;
+xcaption  :='';
+xlabel    :='';
+xcode     :=0;
+xindex    :=0;
+
+//find
+for p:=0 to max32 do
+begin
+
+if not res__listenglish__langcode2(p,xcaption,xlabel,xcode) then break;
+
+if (scode=xcode) then
+   begin
+
+   xindex:=p;
+   result:=true;
+   break;
+
+   end;
+
+end;//p
+
+end;
+
+
+//object procs -----------------------------------------------------------------
+function obj__readitem(xdata:pobject;var xpos:integer;var xname:string;xvalue:pobject;var xvalue32:integer;var xusevalue32:boolean):boolean;
+label//reads a Delphi 3 object data stream
+   skipend;
+const
+   //states
+   sname  =0;
+   svalue =1;
+var
+   w:twrd2;
+   i:tint4;
+   s,v:byte;
+   slen,vlen,nok,xmax,xlen:longint;
+   vtmp:string;
+
+   function vs(xlen:longint):string;
+   begin
+
+   if (xpos<=xmax) then result:=str__str0(xdata,xpos,xlen) else result:='';
+   inc(xpos,xlen);
+
+   end;
+
+   function v1:byte;
+   begin
+
+   result:=str__bytes0(xdata,xpos);
+   inc(xpos);
+
+   end;
+
+   function v4:longint;
+   begin
+
+   tint4(result).bytes[0]:=v1;
+   tint4(result).bytes[1]:=v1;
+   tint4(result).bytes[2]:=v1;
+   tint4(result).bytes[3]:=v1;
+
+   end;
+
+   procedure vd(xlen:longint);
+   begin
+
+   xusevalue32 :=false;
+   str__add3(xvalue,xdata,xpos,xlen);
+   inc(xpos,xlen);
+
+   end;
+
+begin
+
+//defaults
+result       :=false;
+xname        :='';
+xvalue32     :=0;
+xusevalue32  :=true;//number by default
+
+try
+//check
+if not low__true2( str__lock(xdata), str__lock(xvalue) ) then goto skipend;
+
+//init
+str__clear(xvalue);
+xlen         :=str__len(xdata);
+xmax         :=pred(xlen);
+s            :=sname;
+
+if (xpos>xlen) then goto skipend;
+if (xpos<0)    then xpos:=0;
+
+
+//get
+
+//.header
+if (xpos=0) then
+   begin
+
+   if ( vs(4) = 'TPF0' ) then
+      begin
+
+      result  :=true;
+      xname   :='TPF0';
+
+      if (xpos<xmax) then
+         begin
+
+         vd(v1);
+
+         //skip over padding
+         inc(xpos,v1);
+
+         end;
+
+      end;
+
+   goto skipend;
+
+   end;
+
+//values
+repeat
+
+vlen  :=v1;
+
+//.name
+if (s=sname) and (vlen>=1) then
+   begin
+   xname :=vs(vlen);
+   s     :=svalue;
+   end
+
+//.value
+else if (s=svalue) then
+   begin
+
+   case tvaluetype(vlen) of
+   vaInt8:begin//2=byte=1b
+
+      tint4(xvalue32).bytes[0] :=v1;
+      tint4(xvalue32).bytes[1] :=0;
+      tint4(xvalue32).bytes[2] :=0;
+      tint4(xvalue32).bytes[3] :=0;
+      result                   :=true;
+
+      end;
+   vaInt16:begin//3=word=2b
+
+      tint4(xvalue32).bytes[0] :=v1;
+      tint4(xvalue32).bytes[1] :=v1;
+      tint4(xvalue32).bytes[2] :=0;
+      tint4(xvalue32).bytes[3] :=0;
+      result                   :=true;
+
+      end;
+   vaInt32:begin//4=integer=4bytes
+
+      tint4(xvalue32).bytes[0] :=v1;
+      tint4(xvalue32).bytes[1] :=v1;
+      tint4(xvalue32).bytes[2] :=v1;
+      tint4(xvalue32).bytes[3] :=v1;
+      result                   :=true;
+
+      end;
+   vaString:begin//6=short string=Nb
+
+      vd(v1);
+      result:=true;
+
+      end;
+   vaFalse:begin//8=FALSE(boolean)=0b
+
+      xvalue32 :=0;
+      result   :=true;
+
+      end;
+   vaTrue:begin//9=TRUE(boolean)=0b
+
+      xvalue32 :=1;
+      result   :=true;
+
+      end;
+   vaLString:begin//12=long string=Nb
+
+      vd(v4);
+      result:=true;
+
+      end;
+   vaNull,vaNil:;
+
+   else break;
+
+   end;//case
+
+   //stop
+   if result then break;
+
+   end;
+
+//.inc
+until (xpos>xmax);
+
+skipend:
+except;end;
+
+//free
+str__uaf(xdata);
+str__uaf(xvalue);
+
+end;
+
 //compression procs ------------------------------------------------------------
 function low__compress(x:pobject):boolean;
 begin
@@ -16628,95 +17959,132 @@ end;
 //-- PkZIP Archive Support - 10feb2023 -----------------------------------------
 function zip__refOK(xdata,xlist:tstr8):boolean;
 begin
+
 result:=low__true2(str__lock(@xdata),str__lock(@xlist));
+
 if not result then
    begin
+
    str__uaf(@xlist);
    str__uaf(@xdata);
+
    end;
+
 end;
 
 function zip__start(xdata,xlist:tstr8):boolean;
 begin
+
 result:=zip__refOK(xdata,xlist);
+
 if result then
    begin
+
    xlist.clear;
    xdata.clear;
    xdata.tag1:=0;//file count
    xdata.tag2:=1;//indicated we are in write mode and ready
+
    end;
+
 end;
 
 function zip__stop(xdata,xlist:tstr8):boolean;
 var
    xlen:longint;
 begin
+
 result:=false;
 
 try
+
 if zip__refOK(xdata,xlist) and (xdata.tag2=1) then//overview: add list -> signature(4) disk.number(2) disk.start(2) disk.entries(2) total.entries(2) xlist.size(4) xlist.startpos(4) comment.len(2)
    begin
+
    //init
    xlen:=xlist.len;
+
    //mark as stopped
    xdata.tag2:=2;
+
    //signature(4)  disk.number(2)  disk.start(2)
    xlist.aadd([80,75,5,6,     0,0,            0,0]);
+
    //disk.entries(2)
    xlist.addwrd2(xdata.tag1);//file count
+
    //total.entries(2)
    xlist.addwrd2(xdata.tag1);//file count
+
    //xlist.size(4)
    xlist.addint4(xlen);
+
    //xlist.startpos(4)
    xlist.addint4(xdata.len);//was: xdata.tag2);//xlen1b
+
    //comment.len(2)
    xlist.aadd([0,0]);
+
    //append to xdata
    xdata.add(xlist);
    xlist.clear;
+
    //successful
    result:=true;
+
    end;
+
 except;end;
 end;
 
 function zip__add(xdata,xlist:tstr8;sname:string;sdata:tstr8):boolean;
+begin
+result:=zip__add2(xdata,xlist,sname,sdata,false);
+end;
+
+function zip__add2(xdata,xlist:tstr8;sname:string;sdata:tstr8;xstoreonly:boolean):boolean;
 label
    skipend;
 var
    xcompressed:boolean;
    xpos,nlen,dlen,dlen2,x32:longint;
 begin
+
 //defaults
-result:=false;
+result       :=false;
+xcompressed  :=false;
 
 try
+
 //check
 if (not low__true2(str__lock(@sdata),zip__refOK(xdata,xlist))) or (xdata.tag2<>1) or (sname='') then goto skipend;
+
 //init
-//x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
-nlen:=frcrange32(low__len(sname),0,maxword);
-dlen:=sdata.len;
-x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
-//.fast compress
-zip__compress(@sdata,true,true);
+nlen  :=frcrange32(low__len(sname),0,maxword);
+dlen  :=sdata.len;
+x32   :=low__crc32seedable(sdata,0);//MS uses seed "0"
+
 //.filter
 swapchars(sname,'\','/');//18apr2025: PKzip standard: "the name of the file including an optional relative path. All slashes in the path should be forward slashes '/' "
 
-//.use compressed version if SMALLER than original - 11feb2023
-xcompressed:=(sdata.len<dlen);
-if xcompressed then
+//.fast compress
+if not xstoreonly then
    begin
-   xcompressed:=true;
-   sdata.del3(0,2);//remove leading 2 bytes
-   sdata.del3(sdata.len-4,4);//remove trailing 4 bytes
-   end
-else low__decompress(@sdata);
 
-dlen2:=sdata.len;
-inc(xdata.tag1);//file count
+   zip__compress(@sdata,true,true);
+
+   xcompressed:=(sdata.len<dlen) or (sdata.len>2000000);//only optimise for small files under 2mb - 23aug2025
+
+   //uncompress the stream to store as is, slow, but less memory
+   if not xcompressed then low__decompress(@sdata);
+
+   end;
+
+//increment file count
+inc(xdata.tag1);
+
+//dlen2 -> remove leading 2 bytes AND remove trailing 4 bytes for compressed stream - 24aug2025
+dlen2:=sdata.len - insint( 2 + 4 , xcompressed);
 
 //add file - signature(4)  version(2)  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  filename(n)  file.data(n2)
 xpos:=xdata.len;
@@ -16727,7 +18095,12 @@ xdata.addint4(dlen);//data.size(4)
 xdata.addwrd2(nlen);//name.size(2)
 xdata.addwrd2(0);//extras.size(2)
 xdata.addstr(sname);//sname
-xdata.add(sdata);//sdata
+
+//24aug2025: OK
+case xcompressed of
+true:xdata.add2( sdata, 2, pred(sdata.len) - 4 );//remove leading 2 bytes AND remove trailing 4 bytes for compressed stream - 24aug2025
+else xdata.add(sdata);//store "sdata"
+end;
 
 //add list - signature(4)  version(2)  ver.needed  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  file.comment.len(2)  disk.start(2)  Int.Attr(2)  Ext.Attr(4)  Offset.Local.Header(4)  filename(n)
 xlist.aadd([ 80,75,1,2,    low__aorbbyte(10,20,xcompressed),0,       low__aorbbyte(10,20,xcompressed),0,       0,0,      low__aorbbyte(0,8,xcompressed),0,               0,0,         0,0]);
@@ -16746,69 +18119,13 @@ xlist.addstr(sname);
 result:=true;
 skipend:
 except;end;
-try;str__uaf(@sdata);except;end;
+
+//free
+str__uaf(@sdata);
+
 end;
 
-
-{//xxxxxxxxxxxx
-function zip__add(xdata,xlist:tstr8;sname:string;sdata:tstr8):boolean;
-label
-   skipend;
-var
-   xpos,nlen,dlen,dlen2,x32:longint;
-   e:string;
-begin
-try
-//defaults
-result:=false;
-//check
-if (not low__true2(str__lock(@sdata),zip__refOK(xdata,xlist))) or (xdata.tag2<>1) or (sname='') then goto skipend;
-//init
-//x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
-nlen:=frcrange32(low__len(sname),0,maxword);
-dlen:=sdata.len;
-x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
-dlen2:=sdata.len;
-inc(xdata.tag1);//file count
-
-//add file - signature(4)  version(2)  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  filename(n)  file.data(n2)
-xpos:=xdata.len;
-xdata.aadd([  80,75,3,4,    20,0,      0,0,      0,0,               0,0,         0,0]);
-xdata.addint4(x32);//crc32(4)
-xdata.addint4(dlen2);//data.size(4)
-xdata.addint4(dlen);//data.size(4)
-xdata.addwrd2(nlen);//name.size(2)
-xdata.addwrd2(0);//extras.size(2)
-xdata.addstr(sname);//sname
-xdata.add(sdata);//sdata
-
-//add list - signature(4)  version(2)  ver.needed  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  file.comment.len(2)  disk.start(2)  Int.Attr(2)  Ext.Attr(4)  Offset.Local.Header(4)  filename(n)
-xlist.aadd([ 80,75,1,2,    20,0,       20,0,       0,0,      0,0,               0,0,         0,0]);
-xlist.addint4(x32);//crc32(4)
-xlist.addint4(dlen2);//data.size(4)
-xlist.addint4(dlen);//data.size(4)
-xlist.addwrd2(nlen);//name.size(2)
-xlist.addwrd2(0);   //extras.size(2)
-xlist.addwrd2(0);   //comments.size(2)
-xlist.addwrd2(0);   //disk.start(2)
-xlist.aadd([1,0,  32,0,0,0]);//Int.Attr(2) + Ext.Attr(4)
-xlist.addint4(xpos);
-xlist.addstr(sname);
-
-//successful
-result:=true;
-skipend:
-except;end;
-try;str__uaf(@sdata);except;end;
-end;
-{}
-
-function zip__add2(xdata,xlist:tstr8;const sname:string;var sdata:string):boolean;
-begin
-result:=zip__add(xdata,xlist,sname,bcopystrall(sdata));
-end;
-
-function zip__add3(xdata,xlist:tstr8;const sname,sdata:string):boolean;
+function zip__addstr(xdata,xlist:tstr8;const sname,sdata:string):boolean;//24aug2025
 begin
 result:=zip__add(xdata,xlist,sname,bcopystrall(sdata));
 end;
@@ -16819,6 +18136,24 @@ result:=zip__addfromfile2(xdata,xlist,'',sfilename);
 end;
 
 function zip__addfromfile2(xdata,xlist:tstr8;srootfolder,sfilename:string):boolean;
+begin
+result:=zip__addfromfile21(xdata,xlist,srootfolder,sfilename,false);
+end;
+
+function zip__shouldstore(sdata:tstr8):boolean;//23aug2025
+var
+   v:string;
+begin
+
+v:=strlow(io__anyformat2b(@sdata,0));
+
+//mark these data streams for storage only -> don't compress -> avoids time double-compressing an already compressed stream
+result:=
+ (v='zip') or (v='7z') or (v='gif') or (v='jpg') or (v='png') or (v='mp3') or (v='mp4') or (v='wma') or (v='wmv');
+
+end;
+
+function zip__addfromfile21(xdata,xlist:tstr8;srootfolder,sfilename:string;xstoreonly:boolean):boolean;//23aug2025
 var
    sdata:tstr8;
    sname,e:string;
@@ -16841,12 +18176,18 @@ if zip__refOK(xdata,xlist) and (sfilename<>'') then
 
    if (sname<>'') then
       begin
+
       sdata:=str__new8;
-      if io__fromfile(sfilename,@sdata,e) then result:=zip__add(xdata,xlist,sname,sdata);
+      if io__fromfile(sfilename,@sdata,e) then result:=zip__add2(xdata,xlist,sname,sdata, xstoreonly or zip__shouldstore(sdata) );
+
       end;
+
    end;
 except;end;
-try;str__free(@sdata);except;end;
+
+//free
+str__free(@sdata);
+
 end;
 
 function zip__addfromfolder(xdata,xlist:tstr8;const xfolder,xmasklist,xemasklist:string):boolean;
@@ -16859,38 +18200,54 @@ var
    p:longint;
    xfilelist:tdynamicstring;
 begin
+
 //defaults
-result:=false;
-xfilelist:=nil;
+result    :=false;
+xfilelist :=nil;
 
 try
 //get
 if zip__refOK(xdata,xlist) then
    begin
+
    //range
    xfolder:=io__asfolder(xfolder);
+
    //init
    xfilelist:=tdynamicstring.create;
    if io__filelist1(xfilelist,false,xinclude_subfolders,xfolder,xmasklist,xemasklist) then
       begin
+
       //successful
       result:=true;
+
       //add each file
       if (xfilelist.count>=1) then
          begin
+
          for p:=0 to (xfilelist.count-1) do
          begin
-         if not zip__addfromfile2(xdata,xlist,xfolder,xfolder+xfilelist.value[p]) then
+
+         if not zip__addfromfile21(xdata,xlist,xfolder,xfolder+xfilelist.value[p],false) then
             begin
             result:=false;
             break;
+
             end;
+
          end;//p
+
          end;//if
+
       end;
+
    end;
+
 except;end;
-try;freeobj(@xfilelist);except;end;
+
+//free
+freeobj(@xfilelist);
+
 end;
 
 
@@ -17053,6 +18410,11 @@ try;win____shellexecute(0,nil,pchar(fDoc),pchar(fPARMS),nil,1);except;end;
 end;
 
 function low__aorb(a,b:longint;xuseb:boolean):longint;
+begin
+if xuseb then result:=b else result:=a;
+end;
+
+function low__aorbD64(a,b:double;xuseb:boolean):double;//04sep2025
 begin
 if xuseb then result:=b else result:=a;
 end;
@@ -17252,6 +18614,1136 @@ except;end;
 try;str__autofree(@x);except;end;
 end;
 
+function crc32__createseed(var x:tseedcrc32;xseed:longint):boolean;//21aug2025
+var
+   p,n:longint;
+begin
+
+//pass-thru
+result :=true;
+
+//init
+if (xseed=0) then xseed:=crc_seed;//use industry standard seed value
+
+//get
+for n:=0 to 255 do
+begin
+
+x.val     :=n;
+
+for p:=0 to 7 do if boolean(x.val and 1) then x.val:=xseed xor (x.val shr 1) else x.val:=x.val shr 1;
+
+x.ref[n] :=x.val;
+
+end;//p
+
+//set
+x.xresult:=0;
+
+end;
+
+function crc32__encode(var x:tseedcrc32;xdata:tstr8):longint;//21aug2025
+var
+   p:longint;
+begin
+
+//defaults
+result:=0;
+
+//get
+if str__lock(@xdata) then
+   begin
+
+   for p:=0 to (xdata.count-1) do
+   begin
+
+   x.val     :=x.xresult xor crc_against;//was $ffffffff;
+   x.val     :=x.ref[ (x.val xor xdata.bytes[p]) and $ff ] xor (x.val shr 8);
+   x.xresult :=x.val xor crc_against;//was $ffffffff;
+
+   end;//p
+
+   end;
+
+//set
+result:=x.xresult;
+
+//free
+str__uaf(@xdata);
+
+end;//n
+
+
+//## tstophere #################################################################
+
+procedure tstophere__timerproc(uid,umsg:uint;dwUser,dw1,dw2:dword); stdcall;
+begin
+
+if (dwUser<>0) then tstophere(nil).safecall__start2(dwUser);
+
+end;
+
+constructor tstophere.create;
+begin
+
+//self
+if classnameis('tstophere') then track__inc(satOther,1);
+inherited create;
+
+//options
+oAutoFixPauseFailure :=true;//02nov2025 -> uses "ifixtime64"
+
+//vars
+ihalt                :=false;
+ihandle              :=0;//must be set to "zero" here - 02nov2025
+ifixtime64           :=0;//02nov2025
+itimerid             :=0;
+ilastms              :=0;
+ibackupwait          :=false;
+ierrorcode           :=0;
+
+//reset -> creates a new event handle and closes mm.timer
+xreset;
+
+end;
+
+destructor tstophere.destroy;
+begin
+try
+
+//halt
+halt;
+
+//close timer
+xmaketimer(0);
+
+//close handle
+if (ihandle<>0) then win____CloseHandle(ihandle);
+ihandle:=0;
+
+//self
+inherited destroy;
+if classnameis('tstophere') then track__inc(satOther,-1);
+
+except;end;
+end;
+
+procedure tstophere.xreset;//02nov2025 -> internal use only
+begin
+
+//free mm.timer
+xmaketimer(0);
+
+//free
+if (ihandle<>0) then
+   begin
+
+   win____CloseHandle(ihandle);
+   ihandle:=0;
+
+   end;
+
+//create
+//2nd var=manual reset -> requires a call to "resetevent()" to turn access OFF (stop a thread from running)
+//3rd var=start state=TRUE=ON=thread can run, and FALSE=OFF=thread should not run
+ihandle :=win____CreateEvent(nil,true,true,nil);
+
+end;
+
+procedure tstophere.xAutoFixPauseFailure;
+var
+   xok:boolean;
+begin
+//Thread Pause Failure Condition under Windows 11:
+//
+// Thread looses the ability to pause, for instance 1-2 ms when run under Cynthia -> when PC is powered down for 1-2 days
+// then woken, thread pause fails to throttle the thread down to 500-1,000 calls/sec, but runs without throttle control at
+// 30,000+ calls/sec with ms64() proc being triggered at ~110,000 calls/sec on an Intel Core i5 2.5 GHz.
+
+//get
+xok :=(ifixtime64=0) or (ifixtime64>=slowms64);
+
+//reset fix timer -> reset detection period/prevent thread fix occuring too often in failure mode
+ifixtime64:=add64( slowms64, 600000 );//10 mins
+
+//set -> thread time has exceeded max timeout -> assume thread timing has failed, attempt to correct situation by restarting critical components
+if not xok then
+   begin
+
+   //increment thread fix counter
+   track__inc(satThreadFixes,1);
+
+   //reset
+   xreset;
+
+   end;
+
+end;
+
+procedure tstophere.halt;//discontinue operations
+begin
+
+if not ihalt then
+   begin
+
+   ihalt:=true;
+   xmaketimer(0);
+
+   end;
+
+end;
+
+procedure tstophere.xmaketimer(const xms:longint);
+   //Creates an instance of a high-speed multimedia timer for precise thread wake up intervals of ~1 ms, whereas normal
+   //system calls achieve a typical "wake up" rate of ~15 ms, accompanied by large variations in execution time, for example
+   //a simple call to win____sleep(1) for a 1 ms delay in code execution can result in a response rate from anywhere
+   //between 5 ms (sometimes lower if time slicing is adjusted) to 30-60 ms, with the average in the 15-20 ms range.
+
+   procedure m(const dms:longint);
+   begin
+
+   //create
+   if (itimerid=0) then itimerid:=win____timesetevent( xms, xms, @tstophere__timerproc, ihandle, 1 + 256 );
+
+   //fallback
+   if (itimerid=0) then itimerid:=win____timesetevent( xms, xms, @tstophere__timerproc, ihandle, 1 );
+
+   end;
+
+begin
+
+//process only on change of xms
+if low__setint( ilastms, xms ) then
+   begin
+
+   //delete previous timer
+   if (itimerid<>0) then
+      begin
+
+      try;win____timeKillEvent(itimerid);except;end;//02nov2025
+      itimerid:=0;
+
+      end;
+
+   //create a new timer
+   if (xms>=1) and (ihandle<>0) and (not ihalt) then
+      begin
+
+      //01sep2025 - last value => 0=one shot timer, 1=periodic timer, and 256=TIME_KILL_SYNCHRONOUS=0x0100=stops callback function when "timeKillEvent()" destroys the timer
+      m(xms);
+      m(xms+1);
+      m(xms+2);
+      m(xms+5);
+
+      end;
+
+   end;
+
+end;
+
+procedure tstophere.stop;
+begin
+stop3(0,true);//wait forever
+end;
+
+procedure tstophere.stop2(xms:longint);
+begin
+stop3(xms,false);
+end;
+
+procedure tstophere.stop3(xms:longint;xuseSleep:boolean);
+begin
+
+//check
+if ihalt then exit;
+
+//pause failure check - 02nov2025
+if oAutoFixPauseFailure then xAutoFixPauseFailure;
+
+//range
+xms:=frcmin32(xms,0);
+
+//adjust the timer which will auto-wake this thread after X ms when "xms>=1", else waits forever (e.g. for another thread to make a call to "start" ) - 01sep2025
+xmaketimer( insint(xms,not xuseSleep) );
+
+//fallback timeout wait -> timer failed OR not in use
+if (xms>=1) and (itimerid=0) then
+   begin
+
+   ierrorcode  :=insint(1,not xuseSleep);
+   win____sleep(xms);
+
+   end
+
+//fallback forever wait -> handle failed
+else if (ihandle=0) then
+   begin
+
+   ierrorcode  :=2;
+   ibackupwait :=true;
+
+   wait__fortrue2(ibackupwait,ihalt,true);//13sep2025
+
+   end
+
+//handle and/or timer are functional -> mark event as "OFF" -> code should not run
+else
+   begin
+
+   //mode
+   ierrorcode  :=0;
+
+   //off
+   win____resetevent(ihandle);
+
+   //wait for event to be signaled (made ON) by the timer above or via a call to "start"
+   win____WaitForSingleObjectEx( ihandle, -1, false);
+
+   end;
+
+end;
+
+procedure tstophere.start;
+begin
+
+//fallback wait var -> for when ihandle fails - 01sep2025
+ibackupwait:=false;
+
+//mark event as "ON" -> code should run
+safecall__start2(ihandle);
+
+end;
+
+procedure tstophere.safecall__start2(const x:thandle);
+begin//Note: This proc can be used even if the object itself is no longer valid, e.g "tstophere(nil).safecall__start2(some value)"
+     //      will function safely without error.  Do NOT refer to any object based variables here -> will raise an exception.
+
+//mark event as "ON" -> code should run
+if (x<>0) then win____setevent(x);
+
+end;
+
+
+//## tstoprun ##################################################################
+
+constructor tstoprun.create(const xuniquename:string);
+begin
+
+//self
+if classnameis('tstoprun') then track__inc(satOther,1);
+inherited create;
+
+//vars
+irunning   :=false;
+ihalt      :=false;
+ipushcode  :=0;
+ipullwait  :=false;
+ipullcode  :=-1;
+istarted   :=false;//indicates internal thread has reached the point of code execution -> all control vars make sense at this stage
+ifinished  :=false;//indicates internal thread has finished excution and is ready for shutdown
+
+//2nd var=ownership=online seems to state it's unreliable when set to TRUE, should use FALSE for best results
+ihandle    :=win____CreateMutexA( nil, false, pchar(xuniquename) );
+
+end;
+
+destructor tstoprun.destroy;
+begin
+try
+
+//halt
+halt;
+
+//close
+if (ihandle<>0) then win____CloseHandle(ihandle);//close handle
+ihandle :=0;
+
+//self
+inherited destroy;
+if classnameis('tstoprun') then track__inc(satOther,-1);
+
+except;end;
+end;
+
+procedure tstoprun.xwait__fortrue2(var xvar:boolean;const xfast:boolean);
+begin
+wait__fortrue2(xvar,ihalt,xfast);
+end;
+
+procedure tstoprun.xenter1;
+begin
+if (ihandle<>0) then win____WaitForSingleObject(ihandle,-1);//wait forever
+end;
+
+procedure tstoprun.xleave1;
+begin
+if (ihandle<>0) then win____ReleaseMutex(ihandle);
+end;
+
+procedure tstoprun.halt;//discontinue operations
+begin
+
+//check
+if ihalt then exit;
+
+//halt
+xenter1;
+ihalt:=true;
+xleave1;
+
+end;
+
+procedure tstoprun.waitforstart;
+begin
+wait__fortrue(istarted,true);
+end;
+
+procedure tstoprun.waitforfinish;
+begin
+wait__fortrue(ifinished,true);
+end;
+
+function tstoprun.canstop:boolean;
+begin
+result:=irunning and (not ihalt);
+end;
+
+function tstoprun.stop:boolean;//only applies to procs 0-1
+begin
+
+result:=true;//pass-thru
+xenter1;
+irunning:=false;
+xleave1;
+
+end;
+
+function tstoprun.canrun:boolean;
+begin
+result:=(not irunning) and (not ihalt);
+end;
+
+function tstoprun.run:boolean;
+begin
+
+result:=true;//pass-thru
+xenter1;
+if not ihalt then irunning:=true;
+xleave1;
+
+end;
+
+function tstoprun.getrunning:boolean;
+begin
+result:=irunning and (not ihalt);
+end;
+
+function tstoprun.pushcode(const xcode:longint):boolean;
+begin//push a code to an internal thread to process
+
+result     :=true;//pass-thru
+xenter1;
+ipullwait  :=true;
+ipullcode  :=-1;//default reply
+ipushcode  :=xcode;
+xleave1;
+
+end;
+
+function tstoprun.pullcode(var xcode:longint):boolean;
+begin
+result:=pullcode2(xcode,false);
+end;
+
+function tstoprun.pullcode2(var xcode:longint;const xfast:boolean):boolean;
+begin//pull a reply code from an internal thread in response to a call to the "pushcode()" proc above
+     //returns "-1" if no call is made to pushcode first, or object is halting/halted and a reply may not be
+     //forthcoming.
+
+//pass-thru
+result     :=true;
+
+//wait
+wait__fortrue2(ipullwait,ihalt,xfast);
+
+//get
+xenter1;
+xcode      :=ipullcode;
+ipullcode  :=-1;//reset
+xleave1;
+
+end;
+
+procedure tstoprun.threadlevel__started;
+begin
+
+xenter1;
+istarted :=true;
+xleave1;
+
+end;
+
+procedure tstoprun.threadlevel__finished;
+begin
+
+xenter1;
+ifinished :=true;
+xleave1;
+
+end;
+
+function tstoprun.threadlevel__havecode(var xcode:longint):boolean;//true=have a push request, must process the code and return reply even if thread doesn't understand the code
+begin//Note: a thread must use this proc within the "xenter1..<this proc>..xleave1" structure to maintain proper sync of vars
+
+result :=ipullwait;
+xcode  :=ipushcode;
+
+end;
+
+procedure tstoprun.threadlevel__replycode(const xreplycode:longint);
+begin//Note: a thread must use this proc within the "xenter1..<this proc>..xleave1" structure to maintain proper sync of vars
+
+ipullcode :=xreplycode;
+ipullwait :=false;//mark as done -> caller read the reply code
+
+end;
+
+
+//## tbasicthread ##############################################################
+
+function tbasicthread__oversightproc(x:tbasicthread):dword; stdcall;
+begin//run flow: host.obj.create -> createthread -> run.xoversight ->  run.xrunprocs -> return exit code -> mark finished (below) -> host.obj.destroy
+
+//get
+case (x<>nil) of
+true:begin
+
+   //run thread's start code
+   result:=x.xoversight;
+
+   //signal this proc is done reading from the "tbasicthread" object
+   x.__finished;
+
+   end;
+else result:=1;
+end;//case
+
+//259 is reserved for system use "still active" - 15aug2025
+if (result=259) then result:=260;
+
+end;
+
+constructor tbasicthread.create;
+begin
+
+//self
+if classnameis('tbasicthread') then track__inc(satThread,1);
+inherited create;
+
+//vars
+ithread__mspeaklag   :=0;//ms
+ims                  :=1;//1 ms
+iprocms              :=1;//1 ms
+iprocok              :=true;
+iprocidle0           :=true;
+ithreadid            :=0;
+itimer1000           :=0;
+iproctimer           :=0;
+ithread__proccount   :=0;
+ithread__procid      :=0;
+istopid              :=-1;
+imsrate              :=0;
+imspert              :=0;
+ipcount              :=0;
+ithreadhandle        :=0;
+ithreadid            :=0;
+istophere            :=nil;//managed inside the thread
+
+//pre-load api procs -> avoid memory corruption from 1st time usage in a thread -> 07sep2025
+win__ok( vwin____CreateEvent );
+win__ok( vwin____CreateMutexA );
+win__ok( vwin____CloseHandle );
+win__ok( vwin____timesetevent );
+win__ok( vwin____timeKillEvent );
+win__ok( vwin____sleep );
+win__ok( vwin____resetevent );
+win__ok( vwin____WaitForSingleObject );
+win__ok( vwin____WaitForSingleObjectEx );
+win__ok( vwin____setevent );
+win__ok( vwin____CoInitializeEx );
+win__ok( vwin____SetThreadPriority );
+win__ok( vwin____timeBeginPeriod );
+win__ok( vwin____timeEndPeriod );
+win__ok( vwin____CoUninitialize );
+win__ok( vwin____ReleaseMutex );
+
+//stoprun
+istoprun        :=tstoprun.create('');//managed outside the thread
+
+//__create
+__createOutsideThread;
+
+//start
+ithreadhandle:=win____createthread( nil, 0, @tbasicthread__oversightproc, pointer(self), 0, ithreadid );//start now
+
+//wait for thread to start
+istoprun.waitforstart;
+
+end;
+
+destructor tbasicthread.destroy;
+begin
+try
+
+//wait for thread to start
+istoprun.waitforstart;
+
+//halt
+istoprun.halt;
+
+//wait for thread to finish
+istoprun.waitforfinish;
+
+//close thread handle
+win____CloseHandle(ithreadhandle);
+ithreadhandle:=0;
+
+//__destroy
+__destroyOutsideThread;
+
+//stoprun
+freeobj(@istoprun);
+
+//self
+inherited destroy;
+if classnameis('tbasicthread') then track__inc(satThread,-1);
+
+except;end;
+end;
+
+function tbasicthread.errorcode:longint;
+begin
+
+if (istoprun.handle=0) then result:=3
+else                        result:=istophere.errorcode;
+
+end;
+
+function tbasicthread.errormsg:string;//07sep2025
+begin
+
+case errorcode of
+0    :result:='OK';
+1    :result:='FAIL: MM Timer';//07sep2025
+2    :result:='FAIL: Event';
+3    :result:='FAIL: Mutex';
+else  result:='';
+end;//case
+
+end;
+
+function tbasicthread.check__procIsStopped:boolean;
+begin
+result:=(ithread__procid=istopid) and iprocidle0;
+end;
+
+function tbasicthread.check__procIsStopped2(var bol1,bol2:boolean):boolean;
+begin
+
+bol1:=(ithread__procid=istopid);
+bol2:=iprocidle0;
+result:=bol1 and bol2;
+
+end;
+
+procedure tbasicthread.halt;
+begin
+istoprun.halt;
+end;
+
+function tbasicthread.xoversight:dword;
+begin
+
+//start COM system for thread -> not all machines do this
+win____CoInitializeEx(nil,2);
+
+//create internal controls
+istophere    :=tstophere.create;//high-speed stop/thread wake up
+
+//create thread vars
+__createWithinThread;
+
+//high speed thread
+win____SetThreadPriority(ithreadhandle,THREAD_PRIORITY_TIME_CRITICAL);
+
+//fast GLOBAL OS based timer - on
+win____timeBeginPeriod(1);
+
+//run thread procs 1 and 2 - 01sep2025
+result:=xrunprocs;
+
+//exit code -> 259 is for system use "still active"
+if (result=259) then result:=260;
+
+//stop timer etc
+istophere.halt;
+
+//fast GLOBAL OS based timer - off
+win____timeEndPeriod(1);
+
+//destroy thread vars
+__destroyWithinThread;
+
+//free internal controls
+freeobj(@istophere);
+
+//stop COM system for thread
+win____CoUninitialize;
+
+end;
+
+procedure tbasicthread.__finished;
+begin
+istoprun.threadlevel__finished;
+end;
+
+function tbasicthread.xcanproc:boolean;
+begin
+
+//run
+result:=(ims=iprocms) or (ms64>=iproctimer);
+
+if result and (ims<>iprocms) then iproctimer:=add64(ms64,iprocms);
+
+end;
+
+function tbasicthread.xrunprocs:dword;
+label
+   redo;
+var
+   xpeakref:comp;
+   xms,int1,int2:longint;
+   xcanproc01,xcanloop:boolean;
+
+   procedure xpeakstart;
+   begin
+
+   xpeakref:=ms64;
+
+   end;
+
+   procedure xpeakfinish;
+   begin
+
+   ithread__mspeaklag:=largest32(ithread__mspeaklag, frcrange32( sub32(ms64,xpeakref), 0, 1000 ));
+   low__irollone(ithread__proccount);
+
+   end;
+
+begin
+
+//defaults
+result      :=1;
+xcanproc01  :=false;
+
+
+//started
+istoprun.threadlevel__started;
+
+//get
+redo:
+
+
+//.start measuring proc time
+xpeakstart;
+
+
+//proc0
+if xcanproc01 then
+   begin
+
+   __threadProc0;
+
+   end;
+
+
+//safe zone -> restrict access to 1 thread at a time ---------------------------
+istoprun.xenter1;
+
+
+//must be set within safe zone -> proc0
+iprocidle0:=true;
+
+
+//proc0+1 info -> do here in the safe zone AND to be synced with "istopid"
+xcanproc01 :=iprocok and xcanproc and istoprun.running;
+
+
+//for debugging purposes
+//xstressTest
+
+
+//proc1
+if xcanproc01 then
+   begin
+
+   low__irollone(ithread__procid);
+   __threadProc1;
+   low__irollone(ithread__procid);
+
+   end;
+
+
+//proc2
+if istoprun.threadlevel__havecode(int1) then
+   begin
+
+   int2:=0;//default reply
+
+   __threadProc2(int1,int2,true);
+   istoprun.threadlevel__replycode(int2);//release waiting caller
+
+   end;
+
+
+//.finish measuring proc time
+xpeakfinish;
+
+
+//rate values
+if (ms64>=itimer1000) then
+   begin
+
+   //reset
+   itimer1000   :=ms64+1000;
+
+   //get
+   imsrate      :=frcrangeD64( 1000 / frcmin32(ithread__proccount,1) ,0,1000);
+
+   if (imsrate<ithread__mspeaklag) then imsrate:=ithread__mspeaklag;
+
+   imspert      :=frcrangeD64( (ims/frcminD64(imsrate,1))*100 ,0,100);
+   ipcount      :=ithread__proccount;
+
+   //clear
+   ithread__proccount  :=0;
+   ithread__mspeaklag  :=0;
+
+   end;
+
+
+//loop info
+xms      :=ims;
+xcanloop :=not istoprun.halted;
+if not xcanloop then istophere.halt;//disable timer -> we are shuting down
+
+
+//must be set within safe zone -> proc0
+iprocidle0:=not xcanproc01;
+
+
+istoprun.xleave1;
+//end of safe zone -------------------------------------------------------------
+
+
+//lock free code
+if xcanloop then
+   begin
+
+   //stop code execution here and wait for multimedia timer to wake us
+   istophere.stop2(xms);
+
+   //loop
+   goto redo;
+
+   end;
+
+end;
+
+procedure tbasicthread.__createOutsideThread;
+begin
+//create content outside of thread -> thread is not running at this stage
+end;
+
+procedure tbasicthread.__destroyOutsideThread;
+begin
+//free content outside of thread -> thread is no longer running
+end;
+
+procedure tbasicthread.__createWithinThread;
+begin
+//create content inside of thread ->  thread is already running
+end;
+
+procedure tbasicthread.__destroyWithinThread;
+begin
+//free content inside of thread -> thread is still running but finishing up
+end;
+
+procedure tbasicthread.__threadProc0;
+begin
+//code here runs inside the thread BUT outside of the enter1..leave1 lock system -> this proc is called every X ms
+end;
+
+procedure tbasicthread.__threadProc1;
+begin
+//code here runs inside the thread AND within the enter1..lave1 lock system -> this proc is called every X ms
+end;
+
+procedure tbasicthread.__threadProc2(const xcode:longint;var xreplycode:longint;const xWithinThread:boolean);//01sep2025
+begin
+//Code here can run either inside or outside of the thread and within/outside of the enter1..leave1 lock system -> use
+//xWithinThread to detect which.  This proc is triggered by a call to "waitforproc2()...waitforproc22()".
+end;
+
+procedure tbasicthread.setms(x:longint);
+begin
+
+istoprun.xenter1;
+iprocms :=frcmin32(x,1);      //rate at which to fire the thread proc
+ims     :=frcrange32(x,1,10); //rate at which to check internal vars and thread states -> keeps thread responsive to host
+istoprun.xleave1;
+
+end;
+
+function tbasicthread.enter1:boolean;
+begin
+result:=true;
+istoprun.xenter1;
+end;
+
+function tbasicthread.leave1:boolean;
+begin
+result:=true;
+istoprun.xleave1;
+end;
+
+function tbasicthread.canstop:boolean;
+begin
+result:=not istoprun.running;
+end;
+
+function tbasicthread.stopped:boolean;
+begin
+result:=not istoprun.running;
+end;
+
+procedure tbasicthread.stop;
+begin
+
+istoprun.stop;
+istopid:=ithread__procid;
+
+end;
+
+function tbasicthread.canrun:boolean;
+begin
+result:=not istoprun.running;
+end;
+
+procedure tbasicthread.run;
+begin
+istoprun.run;
+end;
+
+function tbasicthread.running:boolean;
+begin
+result:=istoprun.running;
+end;
+
+function tbasicthread.waitforproc2(const xstyle,xcode:longint;const xWaitAllProcsIdle012:boolean):boolean;//03sep2025, 01sep2025
+var
+   xreplycode:longint;
+begin
+result:=waitforproc22(xstyle,xcode,xreplycode,xWaitAllProcsIdle012);
+end;
+
+function tbasicthread.waitforproc22(const xstyle,xcode:longint;var xreplycode:longint;const xWaitAllProcsIdle012:boolean):boolean;//13sep2025, 04sep2025, 01sep2025
+begin
+
+//pass-thru
+result:=true;
+
+//get
+case frcrange32(xstyle,0,basMax) of
+basUseThread:begin//use thread to call "__threadProc2" event
+
+   istoprun.pushcode(xcode);      //signals the thread to fire the "__threadProc2" event
+   istoprun.pullcode(xreplycode); //send reply code back to waiting caller
+
+   end;
+basNoThread:begin//use callers thread to call "__threadProc2" event
+
+   //wait for proc0 to be inactive
+   if xWaitAllProcsIdle012 then
+      begin
+
+      //disengage proc
+      istoprun.xenter1;
+      iprocok :=false;
+      istoprun.xleave1;
+
+      //wait
+      istoprun.xwait__fortrue2(iprocidle0,true);//haltable
+
+      end;
+
+   //locks ARE active -> host must be careful when using use enter1..leave1 -> may cause deadlock down the road
+   istoprun.xenter1;
+
+   __threadProc2(xcode,xreplycode,false);
+
+   iprocok :=true;//re-engage proc
+   istoprun.xleave1;
+
+   end;
+basNoLocks:begin//use callers thread to call "__threadProc2" event
+
+   //disengage proc
+   istoprun.xenter1;
+   iprocok :=false;
+   istoprun.xleave1;
+
+   //wait for proc0 to be inactive
+   if xWaitAllProcsIdle012 then istoprun.xwait__fortrue2(iprocidle0,true);//haltable
+
+   //no locks active -> safe for host to use enter1..leave1 without deadlock/child.deadlock
+   __threadProc2(xcode,xreplycode,false);
+
+   //re-engage proc
+   istoprun.xenter1;
+   iprocok :=true;
+   istoprun.xleave1;
+
+   end;
+end;//case
+
+end;
+
+function tbasicthread.xstressTest:boolean;
+begin
+{
+var
+   xjunk:string;
+   a:tstr8;
+begin
+
+//pass-thru
+result:=true;
+
+//defaults
+a:=nil;
+
+try
+//init
+a:=str__new8;
+
+//stress memory management for leaks and fatal errors
+ival1:='asdrasfasfdasdf';
+ival1:='asdrasfasfdasdf'+ival1+'adsfddddddddddddddddddddddddddddddddddd';
+ival1:='asdrasfasfdasdf'+ival1+'adsfddddddddddddddddddddddddddddddddddd';
+ival1:='asdrasfasfdasdf'+ival1+'adsfddddddddddddddddddddddddddddddddddd';
+ival1:='asdrasfasfdasdf'+ival1+'adsfddddddddddddddddddddddddddddddddddd';
+ival1:='asdrasfasfdasdf'+ival1+'adsfddddddddddddddddddddddddddddddddddd';
+ival1:='asdrasfasfdasdf'+ival1+'adsfddddddddddddddddddddddddddddddddddd';
+ival2:=ival1;
+ival1:='';
+
+xjunk:=ms64str+'aaaaa'+ms64str;
+//a.setlen(random(10000000));
+//freeobj(@a);
+ival1:=k64(random(max32))+'__'+ms64str;
+except;end;
+
+//free
+freeobj(@a);
+{}
+
+end;
+
+
+//## tbasictimer ###############################################################
+
+constructor tbasictimer.create;
+begin
+
+//self
+if classnameis('tbasictimer') then track__inc(satTimer,1);
+inherited create;
+
+end;
+
+destructor tbasictimer.destroy;
+begin
+
+//self
+inherited destroy;
+if classnameis('tbasictimer') then track__inc(satTimer,-1);
+
+end;
+
+procedure tbasictimer.__createOutsideThread;
+begin
+fontimer:=nil;
+end;
+
+procedure tbasictimer.__destroyOutsideThread;
+begin
+fontimer:=nil;
+end;
+
+procedure tbasictimer.__threadProc1;
+begin
+if assigned(fontimer) then fontimer(self);
+end;
+
+
+//## tbasictimer2 ##############################################################
+constructor tbasictimer2.create(xoncreate,xontimer,xondestroy:tnotifyevent;xonproc2:tthreadproc2);
+begin
+
+if classnameis('tbasictimer2') then track__inc(satTimer,1);
+
+//events
+foncreate  :=xoncreate;
+fontimer   :=xontimer;
+fondestroy :=xondestroy;
+fonproc2   :=xonproc2;
+
+//create + start
+inherited create;
+
+end;
+
+destructor tbasictimer2.destroy;
+begin
+
+//self
+inherited destroy;
+if classnameis('tbasictimer2') then track__inc(satTimer,-1);
+
+end;
+
+procedure tbasictimer2.__createWithinThread;
+begin
+if assigned(foncreate) then foncreate(self);
+end;
+
+procedure tbasictimer2.__destroyWithinThread;
+begin
+if assigned(fondestroy) then fondestroy(self);
+end;
+
+procedure tbasictimer2.__threadProc1;
+begin
+if assigned(fontimer) then fontimer(self);
+end;
+
+procedure tbasictimer2.__threadProc2(const xcode:longint;var xreplycode:longint;const xWithinThread:boolean);
+begin
+if assigned(fonproc2) then fonproc2(self,xcode,xreplycode,xWithinThread);
+end;
+
 
 //## tobjectex #################################################################
 constructor tobjectex.create;
@@ -17299,6 +19791,13 @@ if (system_state>=ssStopping) then exit;//when "state=ssStopped" it must be assu
 
 //decide
 if      (m=wm_onmessage_net)    and system_net_session then result:=app__onmessage(m,w,l)
+else if (m=wm_onmessage_nn)     and system_net_session then
+   begin
+
+   if assigned(systemmessage__nn) then result:=systemmessage__nn(m,w,l);
+
+   end
+
 else if (m=wm_onmessage_netraw) and system_net_session then result:=app__onmessage(m,w,l)//04apr2025
 {$ifdef snd}//17jun2025
 else if (m=wm_onmessage_mm)                    then result:=gosssnd__onmessage_mm(m,w,l)
@@ -17344,7 +19843,7 @@ end;
 //register class
 win____registerclassa(a);
 //make window
-iwindow:=win____createwindow(pchar(xclassname),'',0,0,0,0,0,0,0,hinstance,nil);
+//iwindow:=win____createwindow(pchar(xclassname),'',0,0,0,0,0,0,0,hinstance,nil);
 except;end;
 end;
 
@@ -17389,19 +19888,11 @@ try
 clear;
 //controls
 _destroysupport;
-mem__freemem(icore,isize*ibpi,9021);
-sdm_track(-isize*ibpi);//04may2019
+mem__free(icore);
 if freesorted and (sorted<>nil) then freeobj(@sorted);
 //self
 inherited destroy;
 if classnameis('tdynamiclist') then track__inc(satDynlist,-1);
-except;end;
-end;
-
-procedure tdynamiclist.sdm_track(xby:comp);
-begin
-try
-//nil
 except;end;
 end;
 
@@ -17564,39 +20055,52 @@ result:=false;
 try
 //enforce range
 if ilockedBPI then _bpi:=ibpi else _bpi:=frcmin32(_bpi,1);
-_limit:=(max32 div nozero__int32(1000002,_bpi))-1;
-_size:=frcrange32(_size,0,_limit);
-_oldsize:=frcrange32(isize,0,_limit)*ibpi;
-//process
+
+_limit   :=(max32 div nozero__int32(1000002,_bpi))-1;
+_size    :=frcrange32(_size,0,_limit);
+_oldsize :=frcrange32(isize,0,_limit)*ibpi;
+
+//get
 //.size
 if (_size<>isize) then
    begin
+
    a:=icore;
+
    //.enlarge
    if (_size>isize) then
       begin
-      mem__reallocmemCLEAR(icore,_oldsize,_size*_bpi,3);
-      sdm_track((_size*_bpi)-_oldsize);//04may2019
+
+      //was: mem__reallocmemCLEAR(icore,_oldsize,_size*_bpi,3);
+      if not mem__resize3(icore,(_size*_bpi),true,icore) then _size:=_oldsize;//revert on failure
+
       //.update core handle
       if (a<>icore) then _corehandle;
       if _notify then notify(isize,_size-1,_oncreateitem);
+
       end
+
    //.shrink
    else if (_size<isize) then
       begin
+
       if _notify then notify(_size,isize-1,_onfreeitem);
-      mem__reallocmemCLEAR(icore,_oldsize,_size*_bpi,4);
-      sdm_track((_size*_bpi)-_oldsize);//04may2019
+
+      mem__resize3(icore,(_size*_bpi),false,icore);
+
       //.update core handle
       if (a<>icore) then _corehandle;
+
       end;
-   //.check
+
    end;
-//.vars
-ilimit:=_limit;
-isize:=_size;
-icount:=frcrange32(_count,0,_size);
-ibpi:=_bpi;
+
+//set
+ilimit  :=_limit;
+isize   :=_size;
+icount  :=frcrange32(_count,0,_size);
+ibpi    :=_bpi;
+
 //successful
 result:=true;
 skipend:
@@ -17682,16 +20186,21 @@ try
 _count:=frcmin32(_count,0);
 if (_count<=0) or (s<0) or (s>=isize) then exit;
 if ((isize+_count)>ilimit) then exit;
-//process
+
+//get
 //.enlarge
-_oldsize:=isize*bpi;
+_oldsize :=isize*bpi;
 inc(isize,_count);
 inc(icount,_count);
-mem__reallocmemCLEAR(icore,_oldsize,isize*bpi,5);
+//was: mem__reallocmemCLEAR(icore,_oldsize,isize*bpi,5);
+mem__resize3(icore,(isize*bpi),true,icore);
+
 //.shift up by "_count"
 shift(s,_count);
+
 //.new
 if not notify(s,s+_count-1,_oncreateitem) then exit;
+
 //successful
 result:=true;
 except;end;
@@ -19089,7 +21598,7 @@ try
 if (_index<0) or (_index>=icount) then result:=''
 else if (ilen.items[_index]<=0) or (ipos.items[_index]<=0) then result:=''
 //.get - extract "value" sub-string
-else result:=copy(idata.items[_index div nozero__int32(1000005,isharecount)]^,ipos.items[_index],ilen.items[_index]);
+else result:=strcopy1(idata.items[_index div nozero__int32(1000005,isharecount)]^,ipos.items[_index],ilen.items[_index]);
 except;end;
 end;
 
@@ -19110,7 +21619,7 @@ if (_index>=ilen.size) then setparams(icount,_index+500);
 
 //-- set
 //init
-len:=length(_value);
+len:=low__len(_value);
 _index2:=_index div nozero__int32(1000006,isharecount);
 
 //new - append to end of "data.string"
@@ -19119,7 +21628,7 @@ if (ipos.items[_index]<=0) then
 
    if (len>=1) then//ignore empty strings, no setup required for these
       begin
-      ipos.items[_index]:=length(idata.items[_index2]^)+1;
+      ipos.items[_index]:=low__len(idata.items[_index2]^)+1;
       ilen.items[_index]:=len;
       idata.items[_index2]^:=idata.items[_index2]^+_value;
       inc(ibytes,len);//07sep2014
@@ -19135,7 +21644,7 @@ else
    minp:=(_index div nozero__int32(1000007,isharecount))*isharecount;
 
    //adjust "dp.string"
-   idata.items[_index2]^:=copy(idata.items[_index2]^,1,opos-1)+_value+copy(idata.items[_index2]^,opos+ilen.items[_index],length(idata.items[_index2]^));
+   idata.items[_index2]^:=strcopy1(idata.items[_index2]^,1,opos-1)+_value+strcopy1(idata.items[_index2]^,opos+ilen.items[_index],low__len(idata.items[_index2]^));
 
    //adjust current item's "ilen"
    ilen.items[_index]:=len;
@@ -19498,7 +22007,7 @@ else v.sort(_asc);
 end;
 //set
 //.shift ALL comments "//" to top of list
-if _commentsattop then for p:=0 to (n.count-1) do if (copy(n.items[p]^,1,2)='//') then
+if _commentsattop then for p:=0 to (n.count-1) do if (strcopy1(n.items[p]^,1,2)='//') then
    begin
    names.items[dcount]^:=n.items[p]^;
    values.items[dcount]^:=v.items[p]^;
@@ -19511,7 +22020,7 @@ case _asnumbers of
 true:i:=vi.sorted.items[p];
 else i:=v.sorted.items[p];
 end;
-if (not _commentsattop) or (copy(n.items[i]^,1,2)<>'//') then
+if (not _commentsattop) or (strcopy1(n.items[i]^,1,2)<>'//') then
    begin
    names.items[dcount]^:=n.items[i]^;
    values.items[dcount]^:=v.items[i]^;
@@ -19685,7 +22194,7 @@ begin
 for p:=0 to (x.count-1) do
 begin
 n:=x.n[p];
-if low__matchmask(n,i) and ((e='') or (not low__matchmask(n,e))) then value[n]:=x.v[p];
+if filter__match(n,i) and ((e='') or (not filter__match(n,e))) then value[n]:=x.v[p];
 end;//p
 end;
 
@@ -20109,6 +22618,7 @@ if classnameis('tstr8') then track__inc(satStr8,1);
 inherited create;
 otestlock1 :=false;
 oautofree  :=false;
+ifloatsize :=0;
 ilockcount :=0;
 iownmemory :=true;
 iglobal    :=false;
@@ -20139,11 +22649,10 @@ if iownmemory then
    begin
    case iglobal of
    true:global__free(idata);
-   else mem__freemem(idata,idatalen,8021);
+   else mem__free(idata);//26aug2025
    end;//case
    end;
 
-//global__free(idata);
 inherited destroy;
 if classnameis('tstr8') then track__inc(satStr8,-1);
 except;end;
@@ -20268,6 +22777,11 @@ end;
 //successful
 result:=true;
 except;end;
+end;
+
+procedure tstr8.setfloatsize(x:longint);//29aug2025
+begin//0..100 Mb
+ifloatsize:=frcrange32(x,0,100000000);
 end;
 
 procedure tstr8.setbdata(x:tstr8);//27apr2021
@@ -20552,6 +23066,7 @@ begin
 result:=true;//pass-thru
 
 //free previous
+ifloatsize:=0;//01sep2025
 setlen(0);
 ejectcore;
 
@@ -20578,15 +23093,17 @@ icount     :=idatalen;
 xsyncvars;
 
 //track
-if iownmemory then track_bytes:=add64(track_bytes,idatalen);
+if iownmemory then system_memory_bytes:=add64(system_memory_bytes,idatalen);
 end;
 
 function tstr8.ejectcore:boolean;
 begin
-result:=true;//pass-thru
+
+//pass-thru
+result:=true;
 
 //track
-if iownmemory then track_bytes:=sub64(track_bytes,idatalen);
+if iownmemory then system_memory_bytes:=frcmin64( sub64(system_memory_bytes,idatalen) ,0);//23oct2025
 
 //disown
 if iglobal and (handle<>0) then win____GlobalUnlock(handle);//unlock global memory
@@ -20596,11 +23113,12 @@ idata     :=nil;
 idatalen  :=0;
 icount    :=0;
 xsyncvars;
+
 end;
 
-function tstr8.xresize(x:longint;xsetcount:boolean):boolean;
+function tstr8.xresize(x:longint;xsetcount:boolean):boolean;//29aug2025
 var
-   xnew,xold:longint;
+   int1,dnew,xnew,xold:longint;
 begin
 //defaults
 result:=false;
@@ -20610,37 +23128,56 @@ if not iownmemory then exit;
 
 try
 //init
-xnew:=frcrange32(x,0,max32);
-xold:=frcrange32(idatalen,0,max32);
+xold         :=frcrange32(idatalen,0,max32);
+xnew         :=frcrange32(x,0,max32);
+dnew         :=xnew;
+
+//float size -> when engaged, resizes the memory buffer less often by retaining data and adjust size vars - 29aug2025
+if (ifloatsize>=1) then
+   begin
+
+   //enlarge
+   if (dnew>=xold) then dnew:=restrict32( add64(dnew,ifloatsize) )
+
+   //shrink
+   else if not (dnew < (xold-(2*ifloatsize))  ) then dnew:=xold;
+
+   end;
 
 //get
-if (xnew<>xold) then
+if (dnew<>xold) then
    begin
-   //debug check
-   //if system_debug and otestlock1 and (system_debug_testlock1<>0) then showerror('Lock 1 violation [001]');//debug purposes only - 09may2021
 
-   //get
+   //get - 26aug2025
    case iglobal of
-   true:begin
-      idata:=global__resize(idata,xnew);
+   true:if not global__resize2(idata,dnew,idata) then
+      begin
 
-      //Special Note: "global__size()" on Windows 98 can return a larger value than requested - 28may2025
-      if (idata=nil) or (global__size(idata)<xnew) then
-         begin
-         xnew:=xold;
-         idata:=global__resize(idata,xold);//revert back to previous if allocation fails - 15may2025
-         end;
+      dnew:=xold;
+      xnew:=xold;
+
       end;
-   else if not mem__reallocmem(idata,xold,xnew,2) then xnew:=xold;//revert back to previous size if allocation fails - 27apr2021
+
+   else if not mem__resize2(idata,dnew,idata) then
+      begin
+
+      dnew:=xold;//revert back to previous size if allocation fails - 27apr2021
+      xnew:=xold;
+
+      end;
+
    end;//case
 
    //set
-   idatalen :=xnew;
+   idatalen :=dnew;
    xsyncvars;
    end;
 
 //sync
-if xsetcount then icount:=xnew else icount:=frcrange32(icount,0,xnew);
+case xsetcount of
+true:icount:=xnew;
+else icount:=frcrange32(icount,0,xnew);
+end;
 
 //successful
 result:=true;//27apr2021
@@ -21604,9 +24141,12 @@ var
 begin
 try
 xlen:=low__len(x);
+
 setlen(xlen);
+
 if (xlen>=1) and (ibytes<>nil) then//27apr2021
    begin
+
    //was: for p:=1 to xlen do ibytes[p-1]:=byte(x[p-1+stroffset]);//force 8bit conversion
    //faster - 22apr2022
    for p:=1 to xlen do
@@ -21614,7 +24154,9 @@ if (xlen>=1) and (ibytes<>nil) then//27apr2021
    v:=byte(x[p-1+stroffset]);
    ibytes[p-1]:=v;//force 8bit conversion
    end;//p
+
    end;
+
 except;end;
 end;
 
@@ -24184,19 +26726,26 @@ end;
 //## tvars8 ####################################################################
 constructor tvars8.create;
 begin
+
 if classnameis('tvars8') then track__inc(satVars8,1);
 zzadd(self);
+
 inherited create;
+
 icore:=str__new8;
 ofullcompatibility:=true;//now accepts 4 input modes: 1. "name:", 2. "name: value", 3. "name:value" and 4. "name.....(last non-space)"
+
 end;
 
 destructor tvars8.destroy;
 begin
 try
+
 str__free(@icore);
+
 inherited destroy;
 if classnameis('tvars8') then track__inc(satVars8,-1);
+
 except;end;
 end;
 
@@ -25533,12 +28082,15 @@ try
 //init
 xline:=nil;
 clear;
+
 //check
 if zznil(xdata,2077) then exit;
+
 //init
 str__lock(@xdata);
 xline:=str__new8;
 xpos:=0;
+
 //get
 redo:
 if low__nextline0(xdata,xline,xpos) then
@@ -25586,12 +28138,14 @@ if low__nextline0(xdata,xline,xpos) then
       //"name:value" not found, switch to "name....(last non-space)" where name terminates on last non-space (scans right-to-left)
       if (not xok) and ofullcompatibility then
          begin
+
          for p:=pmax downto 0 do if (lb[p]<>ssSpace) then
             begin
             xok:=true;
             sets(xline.str[0,p+1],'');
             break;
             end;
+
          end;
 
       end;//pmax
@@ -25600,35 +28154,36 @@ if low__nextline0(xdata,xline,xpos) then
    goto redo;
    end;
 except;end;
-try
+
+//free
 str__free(@xline);
 str__uaf(@xdata);
-except;end;
+
 end;
 
 function tfastvars.getdata:tstr8;
 var
    p:longint;
 begin
-result:=nil;
+result :=nil;
 
 try
 //defaults
-result:=str__newaf8;
+result :=str__newaf8;
 
 //get
-for p:=0 to (icount-1) do
-begin
-if (vnref1[p]<>0) or (vnref2[p]<>0) then
+for p:=0 to (icount-1) do if (vnref1[p]<>0) or (vnref2[p]<>0) then
    begin
+
    case vm[p] of
-   1:result.sadd(n[p]+': '+bolstr(vb[p])+r10);
-   2:result.sadd(n[p]+': '+intstr32(vi[p])+r10);
-   3:result.sadd(n[p]+': '+intstr64(vc[p])+r10);
+   1   :result.sadd(n[p]+': '+bolstr(vb[p])+r10);
+   2   :result.sadd(n[p]+': '+intstr32(vi[p])+r10);
+   3   :result.sadd(n[p]+': '+intstr64(vc[p])+r10);
    else result.sadd(n[p]+': '+vs[p]+r10);
-   end;
-   end;
-end;//p
+   end;//case
+
+   end;//p
+
 except;end;
 end;
 
@@ -25643,33 +28198,39 @@ var
    p:longint;
    bol1:boolean;
 begin
-result:='';
-a:=nil;
+
+//defaults
+result :='';
+a      :=nil;
 
 try
 //init
-a:=vnew;
-bol1:=false;
+a     :=vnew;
+bol1  :=false;
 
 //get
-for p:=0 to (icount-1) do
-begin
-if (vnref1[p]<>0) or (vnref2[p]<>0) then
+for p:=0 to (icount-1) do if (vnref1[p]<>0) or (vnref2[p]<>0) then
    begin
+
    case vm[p] of
-   1:a.b[vn[p]]:=vb[p];
-   2:a.i[vn[p]]:=vi[p];
-   3:a.i64[vn[p]]:=vc[p];
-   else a.s[vn[p]]:=vs[p];
+   1   :a.b[vn[p]]    :=vb[p];
+   2   :a.i[vn[p]]    :=vi[p];
+   3   :a.i64[vn[p]]  :=vc[p];
+   else a.s[vn[p]]    :=vs[p];
    end;//case
+
    bol1:=true;
-   end;
-end;//p
+
+   end;//p
 
 //set
 if bol1 then result:=a.text;
+
 except;end;
-try;freeobj(@a);except;end;
+
+//free
+freeobj(@a);
+
 end;
 
 procedure tfastvars.setnettext(x:string);
@@ -26397,7 +28958,7 @@ k.add(x);//was: k:=k+x;
 x.replace:=k;//was: x:=k;
 until (k.len>=klimit);
 //.trim to "klimit"
-if (k.len>klimit) then k.setlen(klimit);//was: k:=copy(k,1,klimit);
+if (k.len>klimit) then k.setlen(klimit);//was: k:=strcopy1(k,1,klimit);
 //.finalise
 if not frs(k,j,tbtFeedback) then goto skipend;
 //.set
@@ -26427,7 +28988,7 @@ k.add(x);//was: k:=k+x;
 x.replace:=k;//was: x:=k;
 until (k.len>=klimit);
 //.trim to "klimit"
-if (k.len>klimit) then k.setlen(klimit);//was: k:=copy(k,1,klimit);
+if (k.len>klimit) then k.setlen(klimit);//was: k:=strcopy1(k,1,klimit);
 //.finalise
 if not frs(k,j,tbtFeedback) then goto skipend;
 //.set
@@ -26617,7 +29178,7 @@ while true do
 begin
 //.get
 tmp.clear;
-tmp.add31(s,p,klimit);//was: tmp:=copy(s,p,klimit);
+tmp.add31(s,p,klimit);//was: tmp:=strcopy1(s,p,klimit);
 //.set
 if (tmp.len<=0) then break
 else
@@ -26764,7 +29325,7 @@ while true do
 begin
 //.get
 tmp.clear;
-tmp.add31(s,p,pw2);//was: tmp:=copy(s,p,pw2);
+tmp.add31(s,p,pw2);//was: tmp:=strcopy1(s,p,pw2);
 //.set
 if (tmp.len<=0) then break
 else
@@ -26901,8 +29462,8 @@ else
    end;
 //.read
 //was: rc:=byte(s[5]);
-//was: cs:=to32bit(copy(s,6,4));
-//was: cl:=to32bit(copy(s,10,4));
+//was: cs:=to32bit(strcopy1(s,6,4));
+//was: cl:=to32bit(strcopy1(s,10,4));
 rc:=s.pbytes[5-1];
 cs:=s.int4[6-1];
 cl:=s.int4[10-1];
@@ -26913,7 +29474,7 @@ if v3 then
    //get
    if ((cl+1013)>sLEN) then goto skipend;
    kr.clear;
-   kr.add31(s,14,klimit);//was: kr:=copy(s,14,klimit);
+   kr.add31(s,14,klimit);//was: kr:=strcopy1(s,14,klimit);
    klen:=kr.len;
    startpos:=1014;
    //check
@@ -26927,7 +29488,7 @@ else if v4 then
    if (pw.val<2) or (pw.val>1000) then goto skipend;//enforce range of 2..1000 (upto 8000bit)
    if ((cl+pw.val+15)>sLEN) then goto skipend;
    kr.clear;
-   kr.add31(s,16,pw.val);//was: kr:=copy(s,16,pw.val);
+   kr.add31(s,16,pw.val);//was: kr:=strcopy1(s,16,pw.val);
    klen:=kr.len;
    startpos:=15+klen+1;
    //check
@@ -26955,7 +29516,7 @@ while true do
 begin
 //.get
 tmp.clear;
-tmp.add31(s,p,klen);//was: tmp:=copy(s,p,klen);
+tmp.add31(s,p,klen);//was: tmp:=strcopy1(s,p,klen);
 //.set
 if (tmp.len<=0) then break
 else
@@ -27258,7 +29819,7 @@ if zznil(xdata,2011) or zznil(x,2012) then goto skipend;
 sindex:=low(xstyle);
 xlen:=x.len;
 //.xdata -> encryption key
-//was: if (xdata='') then xdata:=copy(#9#251#34#22#10#29#175#174#103#28#62#91#61#01#78,3,99);
+//was: if (xdata='') then xdata:=strcopy1(#9#251#34#22#10#29#175#174#103#28#62#91#61#01#78,3,99);
 if (xdata.len=0) then xdata.aadd1([9,251,34,22,10,29,175,174,103,28,62,91,61,1,78],3,99);
 xdatalen:=xdata.len;
 //.xref

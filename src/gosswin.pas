@@ -30,17 +30,18 @@ interface
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. 32bit Windows api's (gosswin.pas)
-//## Version.................. 4.00.1490 (+23)
+//## Version.................. 4.00.1979 (+52)
 //## Items.................... 6
-//## Last Updated ............ 11aug2025, 09aug2025, 29jul2025, 26jul2025, 04may2025, 17feb2024
-//## Lines of Code............ 5,400+
+//## Last Updated ............ 08oct2025, 05oct2025, 26sep2025, 05sep2025, 31aug2025, 20aug2025, 11aug2025, 09aug2025, 29jul2025, 26jul2025, 04may2025, 17feb2024
+//## Lines of Code............ 7,500+
 //##
 //## main.pas ................ app code
 //## gossroot.pas ............ console/gui app startup and control
 //## gossio.pas .............. file io
 //## gossimg.pas ............. image/graphics
 //## gossnet.pas ............. network
-//## gosswin.pas ............. 32bit windows api's/xbox controller
+//## gosswin.pas ............. static Win32 api calls
+//## gosswin2.pas ............ dynamic Win32 api calls
 //## gosssnd.pas ............. sound/audio/midi/chimes
 //## gossgui.pas ............. gui management/controls
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
@@ -53,7 +54,8 @@ interface
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
 //## | xbox__*                | Xbox Controller   | 1.00.741  | 10aug2025   | Xbox Controller support with ease-of-access support, complete with persistent button clicks and variable inputs/outputs scaled to floats between 0..1 and -1..1 - 29jul2025, 25jan2025
-//## | win____*               | Win32 general     | 1.00.365  | 11aug2025  | Win32 general api procs for Windows specific features and functionality.  The leading "win____" denotes a Window's API call - 26jul2025, 29apr2025, 01dec2024, 26nov2024, 04mar2024
+//## | win__*                 | Win32 support     | 1.00.856  | 02oct2025   | Dynamic load and management procs for Win32 api calls - 26sep2025, 05sep2025, 31aug2025
+//## | win____*/win2____      | Win32 general     | 1.00.367  | 05oct2025   | Win32 general api procs for Windows specific features and functionality.  The leading "win____" denotes a Window's API call - 11aug2025, 26jul2025, 29apr2025, 01dec2024, 26nov2024, 04mar2024
 //## | net____*               | Win32 network     | 1.00.110  | 04mar2024   | Win32 network api procs for low level network IO.  The leading "net____" denotes a Window's network API call
 //## | reg__*                 | family of procs   | 1.00.032  | 24jun2024   | Registry access procs (requires admin terminal for write/delete) - 03mar2024
 //## | service__*             | family of procs   | 1.00.170  | 04mar2024   | Service support, permits seamless switching from console app to app as a service
@@ -86,7 +88,46 @@ resourcestring
    SInvalidLicense = 'License information for %s is invalid';
    SNotLicensed = 'License information for %s not found. You cannot use this control in design mode';
 
+   
 const
+
+   //wincore procs support -----------------------------------------------------
+
+   //dll names
+   dnone                                                     =0;
+   duser32                                                   =1;
+   dshell32                                                  =2;
+   dShcore                                                   =3;
+   dxinput1_4                                                =4;
+   dadvapi32                                                 =5;
+   dkernel32                                                 =6;
+   dmpr                                                      =7;
+   dversion                                                  =8;
+   dcomctl32                                                 =9;
+   dgdi32                                                    =10;
+   dopengl32                                                 =11;
+   dwintrust                                                 =12;
+   dole32                                                    =13;
+   doleaut32                                                 =14;
+   dolepro32                                                 =15;
+   dwinmm                                                    =16;
+   dwsock32                                                  =17;
+   dwinspool                                                 =18;
+   dcomdlg32                                                 =19;
+   dmax                                                      =19;
+   dllcount                                                  =dmax;
+
+   //errors
+   waOK                                                      =0;
+   waBadDLLName                                              =1;
+   waBadProcName                                             =2;
+   waDLLLoadFail                                             =3;
+   waProcNotFound                                            =4;
+   waMax                                                     =4;
+
+   //---------------------------------------------------------------------------
+
+
   MINCHAR = $80;
   MAXCHAR = 127;
   MINSHORT = $8000;
@@ -183,11 +224,88 @@ const
   SEE_MASK_ASYNCOK        = $00100000;
   SEE_MASK_NOASYNC        = $00000001;
 
+  { RedrawWindow() flags }
+  RDW_INVALIDATE = 1;
+  RDW_INTERNALPAINT = 2;
+  RDW_ERASE = 4;
+  RDW_VALIDATE = 8;
+  RDW_NOINTERNALPAINT = $10;
+  RDW_NOERASE = $20;
+  RDW_NOCHILDREN = $40;
+  RDW_ALLCHILDREN = $80;
+  RDW_UPDATENOW = $100;
+  RDW_ERASENOW = $200;
+  RDW_FRAME = $400;
+  RDW_NOFRAME = $800;
+
    //DIB color table identifiers
    DIB_RGB_COLORS = 0;//color table in RGBs
    DIB_PAL_COLORS = 1;//color table in palette indices
 
 type
+
+
+   //---------------------------------------------------------------------------
+   //Win32 dynamic load support ------------------------------------------------
+
+   pwincore=^twincore;
+   twincore=packed record
+
+     //proc information
+     u             :array[0..999] of boolean;   //true=slot in use
+     p             :array[0..999] of pointer;   //pointer to dll.proc -> nil=proc failed to load
+     c             :array[0..999] of comp;      //number of calls to this proc
+     e             :array[0..999] of longint;   //error code
+     d             :array[0..999] of longint;   //dll name as an index
+     r             :array[0..999] of longint;   //default return value -> used when proc fails to load
+     r2            :array[0..999] of word;      //default return value WORD version -> used when proc fails to load
+
+     //dll information
+     du            :array[0..dmax] of boolean;  //true=DLL in use -> has already attempted to load
+     dh            :array[0..dmax] of longint;  //module handle (0=failed to load)
+     de            :array[0..dmax] of longint;  //error code
+     dcalls        :array[0..dmax] of comp;     //number of calls to this DLL
+
+     //load counters
+     dcount        :longint;
+     dOK           :longint;
+     dFAIL         :longint;
+
+     pcount        :longint;
+     pOK           :longint;
+     pFAIL         :longint;
+
+     //usage counters
+     pcalls        :comp;                       //number of calls to ALL procs
+     ecount        :longint;                    //number of return errors from an api call
+
+     //trace
+     tracelist     :array[0..199] of longint;   //track proc usage by storing slot number in a list
+     tracedepth    :longint;
+
+     end;
+
+   pwinscannerinfo=^twinscannerinfo;
+   twinscannerinfo=record
+
+     lhistory      :tobject;//(tdynamicnamelist) -> tracks repeat entries
+     lprocvars     :tobject;//(tstr8) list of procs as constants
+     lproctype     :tobject;//(tstr8) list of procs as record types
+     lprocline     :tobject;//(tstr8) list of procs as a procedure or function definition line
+     lprocbody     :tobject;//(tstr8) list of procs as a procedure or function text
+     lprocinfo     :tobject;//(tstr8) list of procs in a management function(s)
+     dunit         :tobject;//(tstr8) final unit code
+
+     proccount     :longint;
+     defaultcount  :longint;
+     longestname   :longint;
+
+     end;
+
+   //---------------------------------------------------------------------------
+   //---------------------------------------------------------------------------
+
+
    //.base value type - specify here before anything else
    HDROP         = longint;
    DWORD         = longint;
@@ -445,10 +563,6 @@ type
        rmotorspeed:word;
       end;
 
-   txinputgetstate=function(dwUserIndex03:dword;xinputstate:pxinputstate):tbasic_lresult stdcall;
-   txinputsetstate=function(dwUserIndex03:dword;xinputvibration:pxinputvibration):tbasic_lresult stdcall;
-
-//xxxxxxxxxxxxxxxxxxxxxxxxxxx//111111111111
    txinputkey=packed record
       rawkey     :longint;//key to trigger action
       down       :boolean;
@@ -573,7 +687,34 @@ type
      devicekey   :array[0..127] of char;
      end;
 
-   TEnumDisplayDevicesA=function(lpDeivce:lpcstr;iDevNum:dword;lpDisplayDevice:pdisplaydevicea;dwFlags:dword):lresult stdcall;
+
+  PListEntry = ^TListEntry;
+  TListEntry = record
+    Flink: PListEntry;
+    Blink: PListEntry;
+  end;
+
+  PRTLCriticalSection = ^TRTLCriticalSection;
+  PRTLCriticalSectionDebug = ^TRTLCriticalSectionDebug;
+  TRTLCriticalSectionDebug = record
+    Type_18: Word;
+    CreatorBackTraceIndex: Word;
+    CriticalSection: PRTLCriticalSection;
+    ProcessLocksList: TListEntry;
+    EntryCount: DWORD;
+    ContentionCount: DWORD;
+    Spare: array[0..1] of DWORD;
+  end;
+
+
+  TRTLCriticalSection = record
+    DebugInfo: PRTLCriticalSectionDebug;
+    LockCount: Longint;
+    RecursionCount: Longint;
+    OwningThread: THandle;
+    LockSemaphore: THandle;
+    Reserved: DWORD;
+  end;
 
    pmonitorinfo=^tmonitorinfo;
    tmonitorinfo = record//26nov2024
@@ -592,18 +733,8 @@ type
       szDeviceName:array[0..31] of char;
       end;
 
-   TGetMonitorInfoA=function(Monitor:hmonitor;lpMonitorInfo:pmonitorinfo):lresult stdcall;
-
    PMonitorenumproc=^TMonitorenumproc;
-   TMonitorenumproc=function (unnamedParam1:HMONITOR;unnamedParam2:HDC;unnamedParam3:pwinrect;unnamedParam4:LPARAM):lresult stdcall;
-
-   TEnumDisplayMonitors=function(dc:hdc;lpcrect:pwinrect;userProc:PMonitorenumproc;dwData:lparam):lresult stdcall;
-
-   TGetDpiForMonitor=function(monitor:hmonitor;dpiType:longint;var dpiX,dpiY:uint):lresult stdcall;
-
-   TGetScaleFactorForMonitor=function(monitor:hmonitor;var pScale:dword):lresult stdcall;
-
-   TSetLayeredWindowAttributes=function(winHandle:hwnd;color:dword;bAplha:byte;dwFlags:dword):lresult stdcall;
+   TMonitorenumproc=function (unnamedParam1:HMONITOR;unnamedParam2:HDC;unnamedParam3:pwinrect;unnamedParam4:LPARAM):lresult; stdcall;
 
   PDeviceModeA = ^TDeviceModeA;
   TDeviceModeA = packed record
@@ -663,23 +794,67 @@ type
     hProcess: THandle;
   end;
 
+  PChooseColor =^TChooseColor;
+  TChooseColor = packed record
+    lStructSize: DWORD;
+    hWndOwner: HWND;
+    hInstance: HWND;
+    rgbResult: COLORREF;
+    lpCustColors: ^COLORREF;
+    Flags: DWORD;
+    lCustData: LPARAM;
+    lpfnHook: function(Wnd: HWND; Message: UINT; wParam: WPARAM; lParam: LPARAM): UINT stdcall;
+    lpTemplateName: PAnsiChar;
+  end;
+
+  POpenFilename = ^TOpenFilename;
+  TOpenFilename = packed record
+    lStructSize: DWORD;
+    hWndOwner: HWND;
+    hInstance: HINST;
+    lpstrFilter: PAnsiChar;
+    lpstrCustomFilter: PAnsiChar;
+    nMaxCustFilter: DWORD;
+    nFilterIndex: DWORD;
+    lpstrFile: PAnsiChar;
+    nMaxFile: DWORD;
+    lpstrFileTitle: PAnsiChar;
+    nMaxFileTitle: DWORD;
+    lpstrInitialDir: PAnsiChar;
+    lpstrTitle: PAnsiChar;
+    Flags: DWORD;
+    nFileOffset: Word;
+    nFileExtension: Word;
+    lpstrDefExt: PAnsiChar;
+    lCustData: LPARAM;
+    lpfnHook: function(Wnd: HWND; Msg: UINT; wParam: WPARAM; lParam: LPARAM): UINT stdcall;
+    lpTemplateName: PAnsiChar;
+  end;
+
 const
-   advapi32  = 'advapi32.dll';
-   kernel32  = 'kernel32.dll';
-   user32    = 'user32.dll';
-   mpr       = 'mpr.dll';
-   version   = 'version.dll';
-   comctl32  = 'comctl32.dll';
-   gdi32     = 'gdi32.dll';
-   opengl32  = 'opengl32.dll';
-   wintrust  = 'wintrust.dll';
-   shell32   = 'shell32.dll';
-   ole32     = 'ole32.dll';
-   oleaut32  = 'oleaut32.dll';
-   olepro32  = 'olepro32.dll';
-   mmsyst    = 'winmm.dll';
-   winsocket = 'wsock32.dll';
-   winspl    = 'winspool.drv';
+   win_ext1  ='d'+'ll';
+   win_ext2  ='dr'+'v';
+   user32      ='use'+'r32'+'.'+win_ext1;
+   shell32     ='sh'+'el'+'l32'+'.'+win_ext1;
+   Shcore      ='S'+'hco'+'re'+'.'+win_ext1;
+   xinput1_4   ='xin'+'put'+'1_4'+'.'+win_ext1;
+   advapi32    ='adv'+'ap'+'i32'+'.'+win_ext1;
+   kernel32    ='ke'+'rne'+'l32'+'.'+win_ext1;
+   mpr         ='mp'+'r'+'.'+win_ext1;
+   version     ='v'+'er'+'si'+'on'+'.'+win_ext1;
+   comctl32    ='co'+'mct'+'l32'+'.'+win_ext1;
+   comdlg32    ='co'+'mdl'+'g32'+'.'+win_ext1;//04oct2025
+   gdi32       ='gd'+'i32'+'.'+win_ext1;
+   opengl32    ='open'+'gl32'+'.'+win_ext1;
+   wintrust    ='wi'+'ntr'+'ust'+'.'+win_ext1;
+   ole32       ='ol'+'e32'+'.'+win_ext1;
+   oleaut32    ='olea'+'ut32'+'.'+win_ext1;
+   olepro32    ='olep'+'ro32'+'.'+win_ext1;
+   winmm       ='win'+'mm'+'.'+win_ext1;
+   mmsyst      =winmm;
+   winsocket   ='wso'+'ck32'+'.'+win_ext1;
+   winspl      ='win'+'s'+'pool'+'.'+win_ext2;//.drv
+
 
    NULLREGION = 1;
 
@@ -1394,6 +1569,39 @@ const
    INVALID_HANDLE_VALUE = -1;
    INVALID_FILE_SIZE = DWORD($FFFFFFFF);
 
+   OFN_READONLY = $00000001;
+   OFN_OVERWRITEPROMPT = $00000002;
+   OFN_HIDEREADONLY = $00000004;
+   OFN_NOCHANGEDIR = $00000008;
+   OFN_SHOWHELP = $00000010;
+   OFN_ENABLEHOOK = $00000020;
+   OFN_ENABLETEMPLATE = $00000040;
+   OFN_ENABLETEMPLATEHANDLE = $00000080;
+   OFN_NOVALIDATE = $00000100;
+   OFN_ALLOWMULTISELECT = $00000200;
+   OFN_EXTENSIONDIFFERENT = $00000400;
+   OFN_PATHMUSTEXIST = $00000800;
+   OFN_FILEMUSTEXIST = $00001000;
+   OFN_CREATEPROMPT = $00002000;
+   OFN_SHAREAWARE = $00004000;
+   OFN_NOREADONLYRETURN = $00008000;
+   OFN_NOTESTFILECREATE = $00010000;
+   OFN_NONETWORKBUTTON = $00020000;
+   OFN_NOLONGNAMES = $00040000;
+   OFN_EXPLORER = $00080000;
+   OFN_NODEREFERENCELINKS = $00100000;
+   OFN_LONGNAMES = $00200000;
+
+   CC_RGBINIT = $00000001;
+   CC_FULLOPEN = $00000002;
+   CC_PREVENTFULLOPEN = $00000004;
+   CC_SHOWHELP = $00000008;
+   CC_ENABLEHOOK = $00000010;
+   CC_ENABLETEMPLATE = $00000020;
+   CC_ENABLETEMPLATEHANDLE = $00000040;
+   CC_SOLIDCOLOR = $00000080;
+   CC_ANYCOLOR = $00000100;
+
    FILE_BEGIN = 0;
    FILE_CURRENT = 1;
    FILE_END = 2;
@@ -1717,8 +1925,7 @@ type
    TFNSendAsyncProc = TFarProc;
    TFNDrawStateProc = TFarProc;
    TFNTimeCallBack  = procedure(uTimerID,uMessage:UINT;dwUser,dw1,dw2:dword) stdcall;// <<-- special note: NO semicolon between "dword)" and "stdcall"!!!!
-
-   TFNHookProc = function (code: Integer; wparam: WPARAM; lparam: LPARAM): LRESULT stdcall;
+   TFNHookProc      = function (code: Integer; wparam: WPARAM; lparam: LPARAM): LRESULT stdcall;
 
    //.service status
    PServiceStatus = ^TServiceStatus;
@@ -1914,6 +2121,20 @@ type
     nFileIndexLow: DWORD;
    end;
 
+  pwinmenuiteminfo = ^twinmenuiteminfo;
+  twinmenuiteminfo = packed record
+    cbSize: UINT;
+    fMask: UINT;
+    fType: UINT;             { used if MIIM_TYPE}
+    fState: UINT;            { used if MIIM_STATE}
+    wID: UINT;               { used if MIIM_ID}
+    hSubMenu: HMENU;         { used if MIIM_SUBMENU}
+    hbmpChecked: HBITMAP;    { used if MIIM_CHECKMARKS}
+    hbmpUnchecked: HBITMAP;  { used if MIIM_CHECKMARKS}
+    dwItemData: DWORD;       { used if MIIM_DATA}
+    dwTypeData: PAnsiChar;      { used if MIIM_TYPE}
+    cch: UINT;               { used if MIIM_TYPE}
+  end;
 
   { System time is represented with the following structure: }
   PSystemTime = ^TSystemTime;
@@ -2308,9 +2529,9 @@ type
     lpNext: PMidiHdr;            { reserved for driver }
     reserved: DWORD;             { reserved for driver }
     dwOffset: DWORD;             { Callback offset into buffer }
-    dwReserved: array[0..7] of DWORD; { Reserved for MMSYSTEM }
+    dwReserved: array[0..7] of DWORD; { Reserved for winmmEM }
    end;
-
+    
     MCIERROR = DWORD;     { error return code, 0 means no error }
     MCIDEVICEID = UINT;   { MCI device ID type }
     PMCI_Generic_Parms=^TMCI_Generic_Parms;
@@ -2378,18 +2599,26 @@ type
 {$endif}
 //sound procs support - end ----------------------------------------------------
 
-type
-   tdwin____GetDefaultPrinter      =function(xbuffer:pointer;var xsize:longint):bool; stdcall;
-   tdwin____EnumPrinters           =function(Flags: DWORD; Name: PChar; Level: DWORD; pPrinterEnum: Pointer; cbBuf: DWORD; var pcbNeeded, pcReturned: DWORD): BOOL; stdcall;
+
+
 
 var
    //.started
-   system_started      :boolean=false;
+   system_started                             :boolean=false;
+
+
+   //---------------------------------------------------------------------------
+   //Win32 dynamic load support ------------------------------------------------
+
+   system_wininit                :boolean=false;
+   system_wincore                :twincore;
+
+   //---------------------------------------------------------------------------
+   //---------------------------------------------------------------------------
+
 
    //.xbox controller support - 25jan2025 --------------------------------------
    system_xbox_init                           :boolean=false;
-   system_xbox_getstate                       :txinputgetstate=nil;
-   system_xbox_setstate                       :txinputsetstate=nil;
    system_xbox_deadzone                       :double=0.1;//0..1 => 0.1=10%
    system_xbox_retryref64                     :array[0..xssMax] of comp;
    system_xbox_statelist                      :array[-1..xssMax] of txboxcontrollerinfo;//friendly version => [-1] reserved for xbox__info() for returning a blank/uninitiated data structure
@@ -2425,22 +2654,57 @@ var
    system_xbox_mouse_inverty                  :boolean=false;//slot 5
    system_xbox_mouse_invertx                  :boolean=false;
    system_xbox_mouse_swapbuttons              :boolean=false;
-   
+
    //.input labels => game specific labels for each controller button/movement, a "nil" label indicates the button/movement is not used by the game
    system_xbox_input_labels                    :array[0..xkey_max] of string;
    system_xbox_input_allowed                   :array[0..xkey_max] of boolean;
 
-   //.dynamic support (dll) ----------------------------------------------------
-   dwin____GetDefaultPrinter_state            :longint=0;
-   dwin____GetDefaultPrinter_proc             :tdwin____GetDefaultPrinter=nil;
 
-   dwin____EnumPrinters_state                 :longint=0;
-   dwin____EnumPrinters_proc                  :tdwin____EnumPrinters=nil;
+//############################################################################################################################################################
+//##
+//## Win32 API Calls ( Part I )
+//##
+//## The following Win32 api procs are included below for reference purposes only.  They can be used directly,
+//## and statically linked in code, as they run on Windows 95/98.  But their definitions are primarily for automatic
+//## code generation and conversion into dynamic loading versions of the same name, as well as providing the codebase
+//## with realtime diagnostic and usage information.
+//##
+//## The proc prefixes "win____" and "net____" designate them as Win95/98 compatible
+//##
+//## Code automation performed by "win__make_gosswin2_pas()".  A special "default" variable list can be
+//## specified, per proc, in the format "[[..a list of semi-colon separated name-value pairs..]]".  This provides the code
+//## scanner with additional information, like a return value when the proc is unable to load, along with optional additional
+//## information.
+//##
+//## [win32-api-scanner-start-point] - 30aug2025
+//##
+{$ifdef emergencyfallback}// - use when dynamic procs need maintanence or due to a failure (Win10+ only)
+//##
+//############################################################################################################################################################
+
+const win____emergencyfallback_engaged=true;
+
+function win____ChooseColor(var CC: TChooseColor): Bool; stdcall; external comdlg32  name 'ChooseColorA';
+function win____GetSaveFileName(var OpenFile: TOpenFilename): Bool; stdcall; external comdlg32  name 'GetSaveFileNameA';
+function win____GetOpenFileName(var OpenFile: TOpenFilename): Bool; stdcall; external comdlg32 name 'GetOpenFileNameA';
+function win____RedrawWindow(hWnd: HWND; lprcUpdate: pwinrect; hrgnUpdate: HRGN; flags: UINT): BOOL; stdcall; external user32 name 'RedrawWindow';
+function win____CreatePopupMenu:HMENU; stdcall; external user32 name 'CreatePopupMenu';
+function win____AppendMenu(hMenu: HMENU; uFlags, uIDNewItem: UINT; lpNewItem: PChar): BOOL; stdcall; external user32 name 'AppendMenuA';
+function win____GetSubMenu(hMenu: HMENU; nPos: Integer): HMENU; stdcall; external user32 name 'GetSubMenu';
+function win____GetMenuItemID(hMenu: HMENU; nPos: Integer): UINT; stdcall; external user32 name 'GetMenuItemID';
+function win____GetMenuItemCount(hMenu: HMENU): Integer; stdcall; external user32 name 'GetMenuItemCount';
+function win____CheckMenuItem(hMenu: HMENU; uIDCheckItem, uCheck: UINT): DWORD; stdcall; external user32 name 'CheckMenuItem';
+function win____EnableMenuItem(hMenu: HMENU; uIDEnableItem, uEnable: UINT): BOOL; stdcall; external user32 name 'EnableMenuItem';
+function win____InsertMenuItem(p1: HMENU; p2: UINT; p3: BOOL; const p4: twinmenuiteminfo): BOOL; stdcall; external user32 name 'InsertMenuItemA';
+function win____DestroyMenu(hMenu: HMENU): BOOL; stdcall; external user32 name 'DestroyMenu';
+function win____TrackPopupMenu(hMenu: HMENU; uFlags: UINT; x, y, nReserved: Integer; hWnd: HWND; prcRect: pwinrect): BOOL; stdcall; external user32 name 'TrackPopupMenu';
+
+function win____GetFocus:HWND; stdcall; stdcall; external user32 name 'GetFocus';
+function win____SetFocus(hWnd: HWND): HWND; stdcall; external user32 name 'SetFocus';
+function win____GetParent(hWnd: HWND): HWND; stdcall; external user32 name 'GetParent';
+function win____SetParent(hWndChild, hWndNewParent: HWND): HWND; stdcall; external user32 name 'SetParent';
 
 
-//Windows procs ----------------------------------------------------------------
-//xxxxxxxxxxxxxxxxxxxxxxxxx//111111111111111111111111
-//.API calls preappended with "win____" to easily spot them in code -> they are independant of Delphi and Lazarus
 function win____CreateDirectory(lpPathName: PChar; lpSecurityAttributes: PSecurityAttributes): BOOL; stdcall; external kernel32 name 'CreateDirectoryA';
 function win____GetFileAttributes(lpFileName: PChar): DWORD; stdcall; external kernel32 name 'GetFileAttributesA';
 procedure win____GetLocalTime(var lpSystemTime: TSystemTime); stdcall; external kernel32 name 'GetLocalTime';
@@ -2467,26 +2731,39 @@ function win____MulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; std
 function win____GetSysColor(nIndex: Integer): DWORD; stdcall; external user32 name 'GetSysColor';
 function win____ExtTextOut(DC: HDC; X, Y: Integer; Options: Longint; Rect: PwinRect; Str: PChar; Count: Longint; Dx: PInteger): BOOL; stdcall; external gdi32 name 'ExtTextOutA';
 function win____GetDesktopWindow: HWND; stdcall; external user32 name 'GetDesktopWindow';
+
+//function win____HeapCreate(flOptions, dwInitialSize, dwMaximumSize: DWORD): THandle; stdcall; external kernel32 name 'HeapCreate';
+//function win____HeapDestroy(hHeap: THandle): BOOL; stdcall; external kernel32 name 'HeapDestroy';
+//function win____HeapValidate(hHeap: THandle; dwFlags: DWORD; lpMem: Pointer): BOOL; stdcall; external kernel32 name 'HeapValidate';
+//function win____HeapCompact(hHeap: THandle; dwFlags: DWORD): UINT; stdcall; external kernel32 name 'HeapCompact';
+
+//recommended memory support by MS
+function win____HeapAlloc(hHeap: THandle; dwFlags, dwBytes: DWORD): Pointer; stdcall; external kernel32 name 'HeapAlloc';
+function win____HeapReAlloc(hHeap: THandle; dwFlags: DWORD; lpMem: Pointer; dwBytes: DWORD): Pointer; stdcall; external kernel32 name 'HeapReAlloc';
+function win____HeapSize(hHeap: THandle; dwFlags: DWORD; lpMem: Pointer): DWORD; stdcall; external kernel32 name 'HeapSize';
+function win____HeapFree(hHeap: THandle; dwFlags: DWORD; lpMem: Pointer): BOOL; stdcall; external kernel32 name 'HeapFree';
+
+//legacy memory support - mainly for Clipboard functions etc
 function win____GlobalHandle(Mem: Pointer): HGLOBAL; stdcall; external kernel32 name 'GlobalHandle';
 function win____GlobalSize(hMem: HGLOBAL): DWORD; stdcall; external kernel32 name 'GlobalSize';
 function win____GlobalFree(hMem: HGLOBAL): HGLOBAL; stdcall; external kernel32 name 'GlobalFree';
 function win____GlobalUnlock(hMem: HGLOBAL): BOOL; stdcall; external kernel32 name 'GlobalUnlock';
+
 function win____GetClipboardData(uFormat: UINT): THandle; stdcall; external user32 name 'GetClipboardData';
 function win____SetClipboardData(uFormat: UINT; hMem: THandle): THandle; stdcall; external user32 name 'SetClipboardData';
 function win____GlobalLock(hMem: HGLOBAL): Pointer; stdcall; external kernel32 name 'GlobalLock';
 function win____GlobalAlloc(uFlags: UINT; dwBytes: DWORD): HGLOBAL; stdcall; external kernel32 name 'GlobalAlloc';
 function win____GlobalReAlloc(hMem: HGLOBAL; dwBytes: DWORD; uFlags: UINT): HGLOBAL; stdcall; external kernel32 name 'GlobalReAlloc';
 function win____LoadCursorFromFile(lpFileName: PAnsiChar): HCURSOR; stdcall; external user32 name 'LoadCursorFromFileA';
-//was: function win____GetDefaultPrinter(xbuffer:pointer;var xsize:longint):bool; stdcall; external winspl name 'GetDefaultPrinterA';
-function dwin____GetDefaultPrinter(xbuffer:pointer;var xsize:longint):bool;
+
+function win____GetDefaultPrinter(xbuffer:pointer;var xsize:longint):bool; stdcall; external winspl name 'GetDefaultPrinterA';
 function win____GetVersionEx(var lpVersionInformation: TOSVersionInfo): BOOL; stdcall; external kernel32 name 'GetVersionExA';
-//was: function win____EnumPrinters(Flags: DWORD; Name: PChar; Level: DWORD; pPrinterEnum: Pointer; cbBuf: DWORD; var pcbNeeded, pcReturned: DWORD): BOOL; stdcall; external winspl name 'EnumPrintersA';
-function dwin____EnumPrinters(Flags: DWORD; Name: PChar; Level: DWORD; pPrinterEnum: Pointer; cbBuf: DWORD; var pcbNeeded, pcReturned: DWORD): BOOL;
+function win____EnumPrinters(Flags: DWORD; Name: PChar; Level: DWORD; pPrinterEnum: Pointer; cbBuf: DWORD; var pcbNeeded, pcReturned: DWORD): BOOL; stdcall; external winspl name 'EnumPrintersA';
+
 function win____CreateIC(lpszDriver, lpszDevice, lpszOutput: PChar; lpdvmInit: PDeviceModeA): HDC; stdcall; external gdi32 name 'CreateICA';
 function win____GetProfileString(lpAppName, lpKeyName, lpDefault: PChar; lpReturnedString: PChar; nSize: DWORD): DWORD; stdcall; external kernel32 name 'GetProfileStringA';
 function win____GetDC(hWnd: HWND): HDC; stdcall; external user32 name 'GetDC';
 function win____GetVersion: DWORD; stdcall; external kernel32 name 'GetVersion';
-function win____MessageBox(hWnd: HWND; lpText, lpCaption: PChar; uType: UINT): Integer; stdcall; external user32 name 'MessageBoxA';
 function win____EnumFonts(DC: HDC; lpszFace: PChar; fntenmprc: TFarProc; lpszData: PChar): Integer; stdcall; external gdi32 name 'EnumFontsA';
 function win____EnumFontFamiliesEx(DC: HDC; var p2: TLogFont; p3: TFarProc; p4: LPARAM; p5: DWORD): BOOL; stdcall; external gdi32 name 'EnumFontFamiliesExA';
 function win____GetStockObject(Index: Integer): HGDIOBJ; stdcall; external gdi32 name 'GetStockObject';
@@ -2528,6 +2805,7 @@ function win____InvalidateRect(hWnd: HWND; lpwinrect: pwinrect; bErase: BOOL): B
 function win____StretchBlt(DestDC: HDC; X, Y, Width, Height: Integer; SrcDC: HDC; XSrc, YSrc, SrcWidth, SrcHeight: Integer; Rop: DWORD): BOOL; stdcall; external gdi32 name 'StretchBlt';
 function win____GetClientwinrect(hWnd: HWND; var lpwinrect: twinrect): BOOL; stdcall; external user32 name 'GetClientwinrect';
 function win____GetWindowRect(hWnd: HWND; var lpwinrect: twinrect): BOOL; stdcall; external user32 name 'GetWindowRect';
+function win____GetClientRect(hWnd: HWND; var lpRect: twinrect): BOOL; stdcall; external user32 name 'GetClientRect';
 function win____MoveWindow(hWnd: HWND; X, Y, nWidth, nHeight: Integer; bRepaint: BOOL): BOOL; stdcall; external user32 name 'MoveWindow';
 function win____SetWindowPos(hWnd: HWND; hWndInsertAfter: HWND; X, Y, cx, cy: Integer; uFlags: UINT): BOOL; stdcall; external user32 name 'SetWindowPos';
 function win____DestroyWindow(hWnd: HWND): BOOL; stdcall; external user32 name 'DestroyWindow';
@@ -2540,13 +2818,10 @@ function win____ReleaseDC(hWnd: HWND; hDC: HDC): Integer; stdcall; external user
 function win____BeginPaint(hWnd: HWND; var lpPaint: TPaintStruct): HDC; stdcall; external user32 name 'BeginPaint';
 function win____EndPaint(hWnd: HWND; const lpPaint: TPaintStruct): BOOL; stdcall; external user32 name 'EndPaint';
 function win____SendMessage(hWnd: HWND; Msg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall; external user32 name 'SendMessageA';
-function win____CoInitialize(pvReserved: Pointer): HResult; stdcall; external ole32 name 'CoInitialize';
-procedure win____CoUninitialize; stdcall; external ole32 name 'CoUninitialize';
 function win____EnumDisplaySettingsA(lpszDeviceName: PAnsiChar; iModeNum: DWORD; var lpDevMode: TDeviceModeA): BOOL; stdcall; external user32 name 'EnumDisplaySettingsA';
 function win____CreateDC(lpszDriver, lpszDevice, lpszOutput: PAnsiChar; lpdvmInit: PDeviceModeA): HDC; stdcall; external gdi32 name 'CreateDCA';
 function win____DeleteDC(DC: HDC): BOOL; stdcall; external gdi32 name 'DeleteDC';
 function win____GetDeviceCaps(DC: HDC; Index: Integer): Integer; stdcall; external gdi32 name 'GetDeviceCaps';
-function win____LoadLibraryA(lpLibFileName: PAnsiChar): HMODULE; stdcall; external kernel32 name 'LoadLibraryA';
 function win____GetSystemMetrics(nIndex: Integer): Integer; stdcall; external user32 name 'GetSystemMetrics';
 function win____CreateRectRgn(p1, p2, p3, p4: Integer): HRGN; stdcall; external gdi32 name 'CreateRectRgn';
 function win____CreateRoundRectRgn(p1, p2, p3, p4, p5, p6: Integer): HRGN; stdcall; external gdi32 name 'CreateRoundRectRgn';
@@ -2567,12 +2842,6 @@ procedure win____DragFinish(Drop: HDROP); stdcall; external shell32 name 'DragFi
 function win____SetTimer(hWnd: HWND; nIDEvent, uElapse: UINT; lpTimerFunc: TFNTimerProc): UINT; stdcall; external user32 name 'SetTimer';
 function win____KillTimer(hWnd: HWND; uIDEvent: UINT): BOOL; stdcall; external user32 name 'KillTimer';
 function win____WaitMessage:bool; stdcall; external user32 name 'WaitMessage';
-function win____HeapCreate(flOptions, dwInitialSize, dwMaximumSize: DWORD): THandle; stdcall; external kernel32 name 'HeapCreate';
-function win____HeapDestroy(hHeap: THandle): BOOL; stdcall; external kernel32 name 'HeapDestroy';
-function win____HeapAlloc(hHeap: THandle; dwFlags, dwBytes: DWORD): Pointer; stdcall; external kernel32 name 'HeapAlloc';
-function win____HeapReAlloc(hHeap: THandle; dwFlags: DWORD; lpMem: Pointer; dwBytes: DWORD): Pointer; stdcall; external kernel32 name 'HeapReAlloc';
-function win____HeapFree(hHeap: THandle; dwFlags: DWORD; lpMem: Pointer): BOOL; stdcall; external kernel32 name 'HeapFree';
-function win____GetProcAddress(hModule: HMODULE; lpProcName: LPCSTR): FARPROC; stdcall; external kernel32 name 'GetProcAddress';
 function win____GetProcessHeap: THandle; stdcall; external kernel32 name 'GetProcessHeap';
 function win____SetPriorityClass(hProcess: THandle; dwPriorityClass: DWORD): BOOL; stdcall; external kernel32 name 'SetPriorityClass';
 function win____GetPriorityClass(hProcess: THandle): DWORD; stdcall; external kernel32 name 'GetPriorityClass';
@@ -2580,7 +2849,47 @@ function win____SetThreadPriority(hThread: THandle; nPriority: Integer): BOOL; s
 function win____SetThreadPriorityBoost(hThread: THandle; DisablePriorityBoost: Bool): BOOL; stdcall; external kernel32 name 'SetThreadPriorityBoost';
 function win____GetThreadPriority(hThread: THandle): Integer; stdcall; external kernel32 name 'GetThreadPriority';
 function win____GetThreadPriorityBoost(hThread: THandle; var DisablePriorityBoost: Bool): BOOL; stdcall; external kernel32 name 'GetThreadPriorityBoost';
+
+function win____CoInitializeEx(pvReserved: Pointer; coInit: Longint): HResult; stdcall; external ole32 name 'CoInitializeEx';
+function win____CoInitialize(pvReserved: Pointer): HResult; stdcall; external ole32 name 'CoInitialize';
+procedure win____CoUninitialize; stdcall; external ole32 name 'CoUninitialize';
+
+//function win____InterlockedIncrement(var Addend: Integer): Integer; stdcall; external kernel32 name 'InterlockedIncrement';
+//function win____InterlockedDecrement(var Addend: Integer): Integer; stdcall; external kernel32 name 'InterlockedDecrement';
+//function win____InterlockedExchange(var Target: Integer; Value: Integer): Integer; stdcall; external kernel32 name 'InterlockedExchange';
+
+function win____CreateMutexA(lpMutexAttributes: PSecurityAttributes; bInitialOwner: BOOL; lpName: PAnsiChar): THandle; stdcall; external kernel32 name 'CreateMutexA';
+function win____ReleaseMutex(hMutex: THandle): BOOL; stdcall; external kernel32 name 'ReleaseMutex';
+
+function win____WaitForSingleObject(hHandle: THandle; dwMilliseconds: DWORD): DWORD; stdcall; external kernel32 name 'WaitForSingleObject';
+function win____WaitForSingleObjectEx(hHandle: THandle; dwMilliseconds: DWORD; bAlertable: BOOL): DWORD; stdcall; external kernel32 name 'WaitForSingleObjectEx';
+
+function win____CreateEvent(lpEventAttributes: PSecurityAttributes; bManualReset, bInitialState: BOOL; lpName: PAnsiChar): THandle; stdcall; external kernel32 name 'CreateEventA';
+function win____SetEvent(hEvent: THandle): BOOL; stdcall; external kernel32 name 'SetEvent';
+function win____ResetEvent(hEvent: THandle): BOOL; stdcall; external kernel32 name 'ResetEvent';
+function win____PulseEvent(hEvent: THandle): BOOL; stdcall; external kernel32 name 'PulseEvent';
+
+//procedure win____InitializeCriticalSection(var lpCriticalSection: TRTLCriticalSection); stdcall; external kernel32 name 'InitializeCriticalSection';
+//procedure win____EnterCriticalSection(var lpCriticalSection: TRTLCriticalSection); stdcall; external kernel32 name 'EnterCriticalSection';
+//procedure win____LeaveCriticalSection(var lpCriticalSection: TRTLCriticalSection); stdcall; external kernel32 name 'LeaveCriticalSection';
+//Note: "win____TryEnterCriticalSection()" does not work on Win98 - 30aug2025
+//function win____TryEnterCriticalSection(var lpCriticalSection: TRTLCriticalSection): BOOL; stdcall; external kernel32 name 'TryEnterCriticalSection';
+//procedure win____DeleteCriticalSection(var lpCriticalSection: TRTLCriticalSection); stdcall; external kernel32 name 'DeleteCriticalSection';
+
+function win____InterlockedIncrement(var Addend: Integer): Integer; stdcall; external kernel32 name 'InterlockedIncrement';
+function win____InterlockedDecrement(var Addend: Integer): Integer; stdcall; external kernel32 name 'InterlockedDecrement';
+
+function win____GetFileVersionInfoSize(lptstrFilename: PAnsiChar; var lpdwHandle: DWORD): DWORD; stdcall; external version name 'GetFileVersionInfoSizeA';
+function win____GetFileVersionInfo(lptstrFilename: PAnsiChar; dwHandle, dwLen: DWORD; lpData: Pointer): BOOL; stdcall; external version name 'GetFileVersionInfoA';
+function win____VerQueryValue(pBlock: Pointer; lpSubBlock: PAnsiChar; var lplpBuffer: Pointer; var puLen: UINT): BOOL; stdcall; external version name 'VerQueryValueA';
+
+function win____GetCurrentProcessId: DWORD; stdcall; external kernel32 name 'GetCurrentProcessId';
+procedure win____ExitProcess(uExitCode: UINT); stdcall; external kernel32 name 'ExitProcess';
+
+function win____GetExitCodeProcess(hProcess: THandle; var lpExitCode: DWORD): BOOL; stdcall; external kernel32 name 'GetExitCodeProcess';
 function win____CreateThread(lpThreadAttributes: Pointer; dwStackSize: DWORD; lpStartAddress: TFNThreadStartRoutine; lpParameter: Pointer; dwCreationFlags: DWORD; var lpThreadId: DWORD): THandle; stdcall; external kernel32 name 'CreateThread';
+function win____SuspendThread(hThread: THandle): DWORD; stdcall; external kernel32 name 'SuspendThread';
+function win____ResumeThread(hThread: THandle): DWORD; stdcall; external kernel32 name 'ResumeThread';
 function win____GetCurrentProcess: THandle; stdcall; external kernel32 name 'GetCurrentProcess';
 function win____GetLastError: DWORD; stdcall; external kernel32 name 'GetLastError';
 function win____GetStdHandle(nStdHandle: DWORD): THandle; stdcall; external kernel32 name 'GetStdHandle';
@@ -2602,12 +2911,10 @@ function win____GetDriveType(lpRootPathName: PChar): UINT; stdcall; external ker
 function win____SetErrorMode(uMode: UINT): UINT; stdcall; external kernel32 name 'SetErrorMode';
 procedure win____ExitThread(dwExitCode: DWORD); stdcall; external kernel32 name 'ExitThread';
 function win____TerminateThread(hThread: THandle; dwExitCode: DWORD): BOOL; stdcall; external kernel32 name 'TerminateThread';
+function win____QueryPerformanceCounter(var lpPerformanceCount: comp): BOOL; stdcall; external kernel32 name 'QueryPerformanceCounter';
+function win____QueryPerformanceFrequency(var lpFrequency: comp): BOOL; stdcall; external kernel32 name 'QueryPerformanceFrequency';
 
-function win____GetVolumeInformation(lpRootPathName: PChar;
-  lpVolumeNameBuffer: PChar; nVolumeNameSize: DWORD; lpVolumeSerialNumber: PDWORD;
-  var lpMaximumComponentLength, lpFileSystemFlags: DWORD;
-  lpFileSystemNameBuffer: PChar; nFileSystemNameSize: DWORD): BOOL; stdcall; external kernel32 name 'GetVolumeInformationA';
-
+function win____GetVolumeInformation(lpRootPathName: PChar; lpVolumeNameBuffer: PChar; nVolumeNameSize: DWORD; lpVolumeSerialNumber: PDWORD; var lpMaximumComponentLength, lpFileSystemFlags: DWORD; lpFileSystemNameBuffer: PChar; nFileSystemNameSize: DWORD): BOOL; stdcall; external kernel32 name 'GetVolumeInformationA';
 function win____GetShortPathName(lpszLongPath: PChar; lpszShortPath: PChar; cchBuffer: DWORD): DWORD; stdcall; external kernel32 name 'GetShortPathNameA';
 
 function win____SHGetSpecialFolderLocation(hwndOwner: HWND; nFolder: Integer; var ppidl: PItemIDList): HResult; stdcall; external shell32 name 'SHGetSpecialFolderLocation';
@@ -2616,14 +2923,13 @@ function win____GetWindowsDirectoryA(lpBuffer: PAnsiChar; uSize: UINT): UINT; st
 function win____GetSystemDirectoryA(lpBuffer: PAnsiChar; uSize: UINT): UINT; stdcall; external kernel32 name 'GetSystemDirectoryA';
 function win____GetTempPathA(nBufferLength: DWORD; lpBuffer: PAnsiChar): DWORD; stdcall; external kernel32 name 'GetTempPathA';
 function win____FlushFileBuffers(hFile: THandle): BOOL; stdcall; external kernel32 name 'FlushFileBuffers';
-function win____CreateFile(lpFileName: PChar; dwDesiredAccess, dwShareMode: Integer;
-  lpSecurityAttributes: PSecurityAttributes; dwCreationDisposition, dwFlagsAndAttributes: DWORD;
-  hTemplateFile: THandle): THandle; stdcall; external kernel32 name 'CreateFileA';
+function win____CreateFile(lpFileName: PChar; dwDesiredAccess, dwShareMode: Integer; lpSecurityAttributes: PSecurityAttributes; dwCreationDisposition, dwFlagsAndAttributes: DWORD; hTemplateFile: THandle): THandle; stdcall; external kernel32 name 'CreateFileA';
 function win____GetFileSize(hFile: THandle; lpFileSizeHigh: Pointer): DWORD; stdcall; external kernel32 name 'GetFileSize';
 procedure win____GetSystemTime(var lpSystemTime: TSystemTime); stdcall; external kernel32 name 'GetSystemTime';
 function win____CloseHandle(hObject: THandle): BOOL; stdcall; external kernel32 name 'CloseHandle';
 function win____GetFileInformationByHandle(hFile: THandle; var lpFileInformation: TByHandleFileInformation): BOOL; stdcall; external kernel32 name 'GetFileInformationByHandle';
 function win____SetFilePointer(hFile: THandle; lDistanceToMove: Longint; lpDistanceToMoveHigh: Pointer; dwMoveMethod: DWORD): DWORD; stdcall; external kernel32 name 'SetFilePointer';
+function win____SetEndOfFile(hFile: THandle): BOOL; stdcall; external kernel32 name 'SetEndOfFile';
 function win____WriteFile(hFile: THandle; const Buffer; nNumberOfBytesToWrite: DWORD; var lpNumberOfBytesWritten: DWORD; lpOverlapped: POverlapped): BOOL; stdcall; external kernel32 name 'WriteFile';
 function win____ReadFile(hFile: THandle; var Buffer; nNumberOfBytesToRead: DWORD; var lpNumberOfBytesRead: DWORD; lpOverlapped: POverlapped): BOOL; stdcall; external kernel32 name 'ReadFile';
 function win____GetLogicalDrives: DWORD; stdcall; external kernel32 name 'GetLogicalDrives';
@@ -2632,17 +2938,17 @@ function win____FileTimeToDosDateTime(const lpFileTime: TFileTime; var lpFatDate
 function win____DefWindowProc(hWnd: HWND; Msg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall; external user32 name 'DefWindowProcA';
 function win____RegisterClass(const lpWndClass: TWndClass): ATOM; stdcall; external user32 name 'RegisterClassA';
 function win____RegisterClassA(const lpWndClass: TWndClassA): ATOM; stdcall; external user32 name 'RegisterClassA';
-function win____CreateWindow(lpClassName: PChar; lpWindowName: PChar; dwStyle: DWORD; X, Y, nWidth, nHeight: Integer; hWndParent: HWND; hMenu: HMENU; hInstance: HINST; lpParam: Pointer): HWND;
+
 function win____CreateWindowEx(dwExStyle: DWORD; lpClassName: PChar; lpWindowName: PChar; dwStyle: DWORD; X, Y, nWidth, nHeight: Integer; hWndParent: HWND; hMenu: HMENU; hInstance: HINST; lpParam: Pointer): HWND; stdcall; external user32 name 'CreateWindowExA';
+function win____EnableWindow(hWnd: HWND; bEnable: BOOL): BOOL; stdcall; external user32 name 'EnableWindow';
+function win____IsWindowEnabled(hWnd: HWND): BOOL; stdcall; external user32 name 'IsWindowEnabled';
+function win____UpdateWindow(hWnd: HWND): BOOL; stdcall; external user32 name 'UpdateWindow';
+
 function win____ShellExecute(hWnd: HWND; Operation, FileName, Parameters, Directory: PChar; ShowCmd: Integer): HINST; stdcall; external shell32 name 'ShellExecuteA';
 function win____ShellExecuteEx(lpExecInfo: PShellExecuteInfo):BOOL; stdcall; external shell32 name 'ShellExecuteExA';
 
 function win____SHGetMalloc(var ppMalloc: imalloc): HResult; stdcall; external shell32 name 'SHGetMalloc';
-function win____CreateComObject(const ClassID: TGUID): IUnknown;
-procedure win____OleError(ErrorCode: HResult);
-procedure win____OleCheck(Result: HResult);
 function win____CoCreateInstance(const clsid: TCLSID; unkOuter: IUnknown; dwClsContext: Longint; const iid: TIID; out pv): HResult; stdcall; external ole32 name 'CoCreateInstance';
-function win____TrimPunctuation(const S: string): string;
 function win____GetObject(p1: HGDIOBJ; p2: Integer; p3: Pointer): Integer; stdcall; external gdi32 name 'GetObjectA';
 function win____CreateFontIndirect(const p1: TLogFont): HFONT; stdcall; external gdi32 name 'CreateFontIndirectA';
 function win____SelectObject(DC: HDC; p2: HGDIOBJ): HGDIOBJ; stdcall; external gdi32 name 'SelectObject';
@@ -2660,7 +2966,7 @@ function win____RegOpenKeyEx(hKey: HKEY; lpSubKey: PChar; ulOptions: DWORD; samD
 function win____RegQueryValueEx(hKey: HKEY; lpValueName: PChar; lpReserved: Pointer; lpType: PDWORD; lpData: PByte; lpcbData: PDWORD): Longint; stdcall; external advapi32 name 'RegQueryValueExA';
 function win____RegSetValueEx(hKey: HKEY; lpValueName: PChar; Reserved: DWORD; dwType: DWORD; lpData: Pointer; cbData: DWORD): Longint; stdcall; external advapi32 name 'RegSetValueExA';
 
-//.support
+//support
 function win____StartServiceCtrlDispatcher(var lpServiceStartTable: TServiceTableEntry): BOOL; stdcall; external advapi32 name 'StartServiceCtrlDispatcherA';
 function win____RegisterServiceCtrlHandler(lpServiceName: PChar; lpHandlerProc: ThandlerFunction): SERVICE_STATUS_HANDLE; stdcall; external advapi32 name 'RegisterServiceCtrlHandlerA';
 function win____SetServiceStatus(hServiceStatus: SERVICE_STATUS_HANDLE; var lpServiceStatus: TServiceStatus): BOOL; stdcall; external advapi32 name 'SetServiceStatus';
@@ -2670,14 +2976,12 @@ function win____CreateService(hSCManager: SC_HANDLE; lpServiceName, lpDisplayNam
 function win____OpenService(hSCManager: SC_HANDLE; lpServiceName: PChar; dwDesiredAccess: DWORD): SC_HANDLE; stdcall; external advapi32 name 'OpenServiceA';
 function win____DeleteService(hService: SC_HANDLE): BOOL; stdcall; external advapi32 name 'DeleteService';
 
-
 //winmm.dll
 function win____timeGetTime: DWORD; stdcall; external mmsyst name 'timeGetTime';
 function win____timeSetEvent(uDelay, uResolution: UINT;  lpFunction: TFNTimeCallBack; dwUser: DWORD; uFlags: UINT): UINT; stdcall; external mmsyst name 'timeSetEvent';
 function win____timeKillEvent(uTimerID: UINT): UINT; stdcall; external mmsyst name 'timeKillEvent';
 function win____timeBeginPeriod(uPeriod: UINT): MMRESULT; stdcall; external mmsyst name 'timeBeginPeriod';
 function win____timeEndPeriod(uPeriod: UINT): MMRESULT; stdcall; external mmsyst name 'timeEndPeriod';
-
 
 //winsocket.dll
 //.session
@@ -2697,16 +3001,11 @@ function net____getsockopt(s: TSocket; level, optname: Integer; optval: PChar; v
 function net____accept(s: TSocket; addr: PSockAddr; addrlen: PInteger): TSocket;                                 stdcall;external winsocket name 'accept';
 function net____recv(s: TSocket; var Buf; len, flags: Integer): Integer;                                         stdcall;external winsocket name 'recv';
 function net____send(s: TSocket; var Buf; len, flags: Integer): Integer;                                         stdcall;external winsocket name 'send';
-function net____send2(s:tsocket;var buf;len,flags:longint;var xsent:longint):boolean;
 function net____getpeername(s: TSocket; var name: TSockAddr; var namelen: Integer): Integer;                     stdcall;external winsocket name 'getpeername';
 function net____connect(s: TSocket; var name: TSockAddr; namelen: Integer): Integer;                             stdcall;external winsocket name 'connect';
 function net____ioctlsocket(s: TSocket; cmd: Longint; var arg: u_long): Integer;                                 stdcall;external winsocket name 'ioctlsocket';
 
 //file
-function win__FindMatchingFile(var F: TSearchRec): Integer;
-function win__FindFirst(const Path: string; Attr: longint; var F: TSearchRec): longint;
-function win__FindNext(var F: TSearchRec): longint;//28jan2024
-procedure win__FindClose(var F: TSearchRec);
 function win____FindFirstFile(lpFileName: PChar; var lpFindFileData: TWIN32FindData): THandle; stdcall; external kernel32 name 'FindFirstFileA';
 function win____FindNextFile(hFindFile: THandle; var lpFindFileData: TWIN32FindData): BOOL; stdcall; external kernel32 name 'FindNextFileA';
 function win____FindClose(hFindFile: THandle): BOOL; stdcall; external kernel32 name 'FindClose';
@@ -2734,7 +3033,11 @@ function win____waveInStop(hWaveIn: HWAVEIN): MMRESULT; stdcall; external mmsyst
 function win____waveInReset(hWaveIn: HWAVEIN): MMRESULT; stdcall; external mmsyst name 'waveInReset';
 //.midi
 function win____midiOutGetNumDevs: UINT; stdcall; external mmsyst name 'midiOutGetNumDevs';
+
+//Windows 98: Once the function "win____midiOutGetDevCaps()" returns FALSE stop calling it, else lockup can
+//            occur when calling other subsequent functions, such as midiOutOpen() - 04sep2025
 function win____midiOutGetDevCaps(uDeviceID: UINT; lpCaps: PMidiOutCaps; uSize: UINT): MMRESULT; stdcall; external mmsyst name 'midiOutGetDevCapsA';
+
 function win____midiOutOpen(lphMidiOut: PHMIDIOUT; uDeviceID: UINT; dwCallback, dwInstance, dwFlags: DWORD): MMRESULT; stdcall; external mmsyst name 'midiOutOpen';
 function win____midiOutClose(hMidiOut: HMIDIOUT): MMRESULT; stdcall; external mmsyst name 'midiOutClose';
 function win____midiOutReset(hMidiOut: HMIDIOUT): MMRESULT; stdcall; external mmsyst name 'midiOutReset';//for midi streams only? -> hence the "no effect" for volume reset between songs - 15apr2021
@@ -2747,8 +3050,8 @@ function win____midiOutShortMsg(const hMidiOut: HMIDIOUT; const dwMsg: DWORD): M
 //function midiOutLongMsg(hMidiOut: HMIDIOUT; lpMidiOutHdr: PMidiHdr; uSize: UINT): MMRESULT; stdcall; external mmsyst name 'midiOutLongMsg';
 
 //.mci
-function win____mciSendCommand(mciId:MCIDEVICEID;uMessage:UINT;dwParam1,dwParam2:DWORD):MCIERROR; stdcall; external 'winmm.dll' name 'mciSendCommandA';
-function win____mciGetErrorString(mcierr: MCIERROR; pszText: PChar; uLength: UINT): BOOL; stdcall; external 'winmm.dll' name 'mciGetErrorStringA';
+function win____mciSendCommand(mciId:MCIDEVICEID;uMessage:UINT;dwParam1,dwParam2:DWORD):MCIERROR; stdcall; external winmm name 'mciSendCommandA';
+function win____mciGetErrorString(mcierr: MCIERROR; pszText: PChar; uLength: UINT): BOOL; stdcall; external winmm name 'mciGetErrorStringA';
 
 //.mixer - volumes
 function win____waveOutGetVolume(hwo: longint; lpdwVolume: PDWORD): MMRESULT; stdcall; external mmsyst name 'waveOutGetVolume';
@@ -2762,6 +3065,74 @@ function win____auxGetVolume(uDeviceID: UINT; lpdwVolume: PDWORD): MMRESULT; std
 //sound procs - end ------------------------------------------------------------
 
 
+
+//############################################################################################################################################################
+//##
+//## Win32 API Calls ( Part II )
+//##
+//## The following Win32 api procs are included below for reference purposes only.  They should not be used directly,
+//## or statically linked in code.  Their definitions are provided primarily for automatic code generation into dynamic
+//## loading versions of the same name.  This allows the codebase to function across all flavours of Microsoft Windows
+//## without breaking, or preventing the app from starting.  In addition, each dynamic proc provides the codebase with
+//## realtime diagnostic and usage information.
+//##
+//## The proc prefixes "win2____" and "net2____" designate a usage scope beyond Win95/98
+//##
+//## Code automation performed by "win__make_gosswin2_pas()".  A special "default" variable list can be
+//## specified, per proc, in the format "[[..a list of semi-colon separated name-value pairs..]]".  This provides the code
+//## scanner with additional information, like a return value when the proc is unable to load, along with optional additional
+//## information.
+//##
+//############################################################################################################################################################
+
+function win2____GetGuiResources(xhandle:thandle;flags:dword):dword; stdcall; external user32 name 'GetGuiResources';
+function win2____SetProcessDpiAwarenessContext(inDPI_AWARENESS_CONTEXT:dword):lresult; stdcall; external user32 name 'SetProcessDpiAwarenessContext';
+function win2____GetMonitorInfo(Monitor:hmonitor;lpMonitorInfo:pmonitorinfo):lresult; stdcall; external user32 name 'GetMonitorInfoA';
+function win2____EnumDisplayMonitors(dc:hdc;lpcrect:pwinrect;userProc:PMonitorenumproc;dwData:lparam):lresult; stdcall; external user32 name 'EnumDisplayMonitors';
+function win2____GetDpiForMonitor(monitor:hmonitor;dpiType:longint;var dpiX,dpiY:uint):lresult; stdcall; external Shcore name 'GetDpiForMonitor';//[[result:^^E_FAIL^^;]]
+function win2____SetLayeredWindowAttributes(winHandle:hwnd;color:dword;bAplha:byte;dwFlags:dword):lresult; stdcall; external user32 name 'SetLayeredWindowAttributes';
+function win2____XInputGetState(dwUserIndex03:dword;xinputstate:pxinputstate):tbasic_lresult; stdcall; external xinput1_4 name 'XInputGetState';//[[result:^^E_FAIL^^;]]
+function win2____XInputSetState(dwUserIndex03:dword;xinputvibration:pxinputvibration):tbasic_lresult; stdcall; external xinput1_4 name 'XInputSetState';//[[result:^^E_FAIL^^;]]
+function win2____GetFileVersionInfoSize(lptstrFilename: PAnsiChar; var lpdwHandle: DWORD): DWORD; stdcall; external version name 'GetFileVersionInfoSizeA';
+function win2____GetFileVersionInfo(lptstrFilename: PAnsiChar; dwHandle, dwLen: DWORD; lpData: Pointer): BOOL; stdcall; external version name 'GetFileVersionInfoA';
+function win2____VerQueryValue(pBlock: Pointer; lpSubBlock: PAnsiChar; var lplpBuffer: Pointer; var puLen: UINT): BOOL; stdcall; external version name 'VerQueryValueA';
+
+
+
+//############################################################################################################################################################
+//##
+//## END of automatic scan point AND emergency proc fallback support
+//##
+{$else}
+const win____emergencyfallback_engaged=false;// - use when dynamic procs need maintanence or due to a failure (Win10+ only)
+{$endif}
+//##
+//## [win32-api-scanner-stop-point] - 30aug2025
+//##
+//############################################################################################################################################################
+
+
+
+
+//static Win32 procs
+function win____LoadLibraryA(lpLibFileName: PAnsiChar): HMODULE; stdcall; external kernel32 name 'LoadLibraryA';
+function win____GetProcAddress(hModule: HMODULE; lpProcName: LPCSTR): FARPROC; stdcall; external kernel32 name 'GetProcAddress';
+function win____MessageBox(hWnd: HWND; lpText, lpCaption: PChar; uType: UINT): Integer; stdcall; external user32 name 'MessageBoxA';
+
+
+//support procs
+function net____send2(s:tsocket;var buf;len,flags:longint;var xsent:longint):boolean;
+function win____CreateComObject(const ClassID: TGUID): IUnknown;
+procedure win____OleError(ErrorCode: HResult);
+procedure win____OleCheck(Result: HResult);
+function win____TrimPunctuation(const S: string): string;
+
+//file
+function win__FindMatchingFile(var F: TSearchRec): Integer;
+function win__FindFirst(const Path: string; Attr: longint; var F: TSearchRec): longint;
+function win__FindNext(var F: TSearchRec): longint;//28jan2024
+procedure win__FindClose(var F: TSearchRec);
+
 //console
 function low__console(n:string;var v1,v2:longint):boolean;
 function low__consoleb(n:string;v1,v2:longint):boolean;
@@ -2770,10 +3141,6 @@ function low__stdin:thandle;
 function low__stdout:thandle;
 function low__handleok(x:thandle):boolean;
 procedure low__handlenone(var x:thandle);
-
-
-//xxxxxxxxxxxxxxxxxxxxxxxx//7777777777777777777777
-
 
 
 //registry procs ---------------------------------------------------------------
@@ -2807,6 +3174,51 @@ function root__timeperiod:longint;
 procedure root__settimeperiod(xms:longint);
 procedure root__stoptimeperiod;
 procedure root__throttleASdelay(xpert100:longint;var xloopcount:longint);
+
+
+//dynamic proc suport ----------------------------------------------------------
+procedure win__init;//should be called from app__boot
+
+function win__makeproc(x:string;var xcore:twinscannerinfo;var e:string):boolean;
+function win__makeprocs(const sf,df,dversionlabel:string):boolean;
+procedure win__make_gosswin2_pas;
+
+function win__errmsg(const e:longint):string;
+function win__dllname(const xindex:longint):string;
+function win__dllname2(const xindex:longint;xincludeext:boolean):string;
+function win__finddllname(const xname:string;var xindex:longint):boolean;
+procedure win__inc(const xslot:longint);
+procedure win__dec;
+procedure win__depthtrace(xlimit:longint);
+
+function win__proccount:longint;
+function win__proccalls:comp;
+function win__procload:longint;
+function win__dllload:longint;
+function win__infocount:longint;
+function win__infofind(xindex:longint;var v1,v2,v3,v4:string;var xtitle:boolean):boolean;
+function win__procCallCount(const xslot:longint):comp;
+
+
+function win__procname(const xslot:longint):string;
+function win__slotinfo(const xslot:longint;var dname,rvalue:longint;var pname:string;var xmisc:string):boolean;
+
+function win__ok(const xslot:longint):boolean;
+function win__loaded(const xslot:longint):boolean;
+function win__usebol(var xdefresult:bool;const xslot:longint;var xptr:pointer):boolean;////26sep2025
+function win__usewrd(var xdefresult:word;const xslot:longint;var xptr:pointer):boolean;//26sep2025
+function win__useint(var xdefresult:longint;const xslot:longint;var xptr:pointer):boolean;//26sep2025
+function win__useptr(var xdefresult:pointer;const xslot:longint;var xptr:pointer):boolean;
+function win__usehnd(var xdefresult:thandle;const xslot:longint;var xptr:pointer):boolean;
+function win__use(const xslot:longint;var xptr:pointer):boolean;
+
+procedure win__errbol(var xresult:bool;const xreturn:bool);
+procedure win__errwrd(var xresult:word;const xreturn:word);
+procedure win__errint(var xresult:longint;const xreturn:longint);
+procedure win__errptr(var xresult:pointer;const xreturn:pointer);
+procedure win__errhnd(var xresult:thandle;const xreturn:thandle);
+
+//xxxxxxxxx engage error tracking in api calls
 
 
 //system procs -----------------------------------------------------------------
@@ -2946,8 +3358,7 @@ procedure xbox__setinputlabel(xindex:longint;const xlabel:string);
 
 implementation
 
-uses gossroot, gossio;
-
+uses gosswin2, gossroot, gossio {$ifdef gui},gossgui{$endif};
 
 //start-stop procs -------------------------------------------------------------
 procedure gosswin__start;
@@ -3003,8 +3414,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,8)='gosswin.') then strdel1(xname,1,8) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.1490'
-else if (xname='date')       then result:='11aug2025'
+if      (xname='ver')        then result:='4.00.1979'
+else if (xname='date')       then result:='08oct2025'
 else if (xname='name')       then result:='Win32'
 else
    begin
@@ -3035,62 +3446,6 @@ else
    end;
 except;end;
 try;str__free(@a);except;end;
-end;
-
-
-//dynamic support for external libraries ---------------------------------------
-function dll__loaded(var xstateval:longint;const xlibname,xprocname:string;var xprocaddr:pointer):boolean;
-var
-   a:hmodule;
-begin
-//defaults
-result:=false;
-
-try
-//load lib and load proc
-if (xstateval=0) then
-   begin
-   if (xlibname='') or (xprocname='') then xstateval:=2//error
-   else
-      begin
-      //load library
-      a:=win____LoadLibraryA(pchar(xlibname));
-
-      if (a=0) then xstateval:=2//error
-      else
-         begin
-         //load proc
-         xprocaddr:=win____GetProcAddress(a,pansichar(xprocname));
-
-         case assigned(xprocaddr) of
-         true:xstateval:=1;//successful
-         else xstateval:=2//error
-         end;//case
-
-         end;
-      end;
-   end;
-
-//return result
-result:=(xstateval=1);
-except;end;
-end;
-
-
-function dwin____GetDefaultPrinter(xbuffer:pointer;var xsize:longint):bool;//13may2025
-begin
-case dll__loaded(dwin____GetDefaultPrinter_state,winspl,'GetDefaultPrinterA',@dwin____GetDefaultPrinter_proc) of
-true:result:=dwin____GetDefaultPrinter_proc(xbuffer,xsize);
-else result:=false;
-end;//case
-end;
-
-function dwin____EnumPrinters(Flags: DWORD; Name: PChar; Level: DWORD; pPrinterEnum: Pointer; cbBuf: DWORD; var pcbNeeded, pcReturned: DWORD): BOOL;//13may2025
-begin
-case dll__loaded(dwin____EnumPrinters_state,winspl,'EnumPrintersA',@dwin____EnumPrinters_proc) of
-true:result:=dwin____EnumPrinters_proc(Flags,Name,Level,pPrinterEnum,cbBuf,pcbNeeded,pcReturned);
-else result:=false;
-end;//case
 end;
 
 
@@ -3735,6 +4090,1789 @@ if (xloopcount<1) then xloopcount:=1;
 end;
 
 
+//dynamic procs support --------------------------------------------------------
+//wina procs -------------------------------------------------------------------
+
+function win__makeproc(x:string;var xcore:twinscannerinfo;var e:string):boolean;
+label
+   skipend;
+var
+   lnameindex,xlen,pc,lp,p2,p:longint;
+   xfunc:boolean;
+   xprocline,xorgprocname,str1,str2,xvarlist,xvarlistBARE,xreturntype,dname,lname,pname,vname:string;
+   xdefvalsline,xloadType,xfuncbody,xfuncbodyBARE,xfuncbody2,n,v,etmp:string;
+   xdefvals:tfastvars;
+   vc:char;
+   xhasdefault,xcolon,bol1,bol2:boolean;
+
+   function c(xindex:longint):char;
+   begin
+
+   if (xindex>=1) and (xindex<=xlen) then result:=x[xindex-1+stroffset] else result:=#32;
+
+   end;
+
+   function emsg(const xmsg:string):boolean;
+   begin
+
+   result:=true;
+   if (e='') then e:=xmsg+rcode+rcode+'-- For Proc --'+rcode+x;
+
+   end;
+
+   function xpad0(const x:string):string;
+   const
+      xline='                                          ';
+   begin
+   result:=x+strcopy1(xline,1,low__len(xline)-low__len(x));
+   end;
+
+   function xpad1(const x:string):string;
+   const
+      xline='                                                      ';
+   begin
+   result:=x+strcopy1(xline,1,low__len(xline)-low__len(x));
+   end;
+
+   function xpad2(const x:string):string;
+   const
+      xline='               ';
+   begin
+   result:=x+strcopy1(xline,1,low__len(xline)-low__len(x));
+   end;
+
+   function xpad3(const x:string):string;
+   const
+      xline='              ';
+   begin
+   result:=x+strcopy1(xline,1,low__len(xline)-low__len(x));
+   end;
+
+   function xpad4(const x:string):string;
+   const
+      xline='                                   ';
+   begin
+   result:=x+strcopy1(xline,1,low__len(xline)-low__len(x));
+   end;
+
+   function rh(const x:string):boolean;
+   begin
+   result:=strmatch(x,xreturntype);
+   if result then xloadType:='hnd';//thandle
+   end;
+
+   function rp(const x:string):boolean;
+   begin
+   result:=strmatch(x,xreturntype);
+   if result then xloadType:='ptr';//longint
+   end;
+
+   function ri(const x:string):boolean;
+   begin
+   result:=strmatch(x,xreturntype);
+   if result then xloadType:='int';//longint
+   end;
+
+   function rw(const x:string):boolean;
+   begin
+   result:=strmatch(x,xreturntype);
+   if result then xloadType:='wrd';//word
+   end;
+
+   function rb(const x:string):boolean;
+   begin
+   result:=strmatch(x,xreturntype);
+   if result then xloadType:='bol';//bool
+   end;
+
+   function rskip(const x:string):boolean;
+   begin
+   result:=strmatch(x,xreturntype);
+   end;
+
+   //---------------------------------------------------------------------------
+   function xsysvals(var x,e:string):boolean;
+   label
+      redo;
+   const
+      xsyschar   ='^';
+      xsyschar2  =xsyschar+xsyschar;
+   var
+      xrescanlimit,p2,p,xlen:longint;
+      xvaldone,bol1:boolean;
+      n:string;
+
+      function emsg(const x:string):boolean;
+      begin
+
+      result:=true;
+      if (e='') then e:=x;
+
+      end;
+
+      function m(const xname,xvarval:string):boolean;
+      begin
+
+      //check
+      if xvaldone then
+         begin
+
+         result:=true;
+         exit;
+
+         end;
+
+      //get
+      result:=strmatch(n,xname);
+
+      if result then
+         begin
+
+         x        :=strcopy1(x,1,p-1)+xvarval+strcopy1(x,p2+2,xlen);
+         xlen     :=low__len(x);
+         xvaldone :=true;
+
+         end;
+
+      end;
+
+      function mi(const xname:string;xvarval:longint):boolean;
+      begin
+
+      result:=xvaldone or m(xname,intstr32(xvarval));
+
+      end;
+
+   begin
+
+   //defaults
+   result            :=false;
+   e                 :='';
+   xrescanlimit      :=100;
+
+   //init
+   xlen   :=low__len(x);
+   if (xlen<1) then
+      begin
+
+      result:=true;
+      exit;
+
+      end;
+
+   //scan
+   redo:
+   if (xlen>=1) then for p:=1 to xlen do if (x[p-1+stroffset]=xsyschar) and (strcopy1(x,p,2)=xsyschar2) then
+      begin
+
+      //init
+      xvaldone  :=false;
+      bol1      :=false;
+      n         :='';
+
+      //get
+      for p2:=(p+2) to xlen do if (x[p2-1+stroffset]=xsyschar) and (strcopy1(x,p2,2)=xsyschar2) then
+         begin
+
+         n    :=strlow( strcopy1( x, p+2, p2-p-2 ) );
+         bol1 :=true;
+         break;
+
+         end;
+
+      //error
+      if (not bol1) and emsg('A system value in the format "'+xsyschar2+'<value name>'+xsyschar2+'" was started but not finished') then exit;
+
+      //check
+      if (n='') and emsg('Invalid system value name "nil"')                                                  then exit;
+
+
+
+      //replace sys.val label with actual value
+      mi('s_false',s_false);
+      mi('e_fail',$80004005);//03sep2025
+
+
+
+      //check
+      if (not xvaldone) and emsg('System value name "'+n+'" not found')                                      then exit;
+
+
+      //rescan from the beginning
+      dec(xrescanlimit);
+      if (xrescanlimit<=0) and emsg('Rescan limit for system value exceeded - error in code')                then exit;
+
+      //loop
+      goto redo;
+
+      end;//p
+
+   //successful
+   result:=true;
+
+   end;
+
+   //read defaults
+   function xreadDefaultVars(x:string;var e:string):boolean;
+   label
+      skipend;
+   var
+      xlen,xpos:longint;
+      xline:string;
+      dtext:tstr8;
+   begin
+
+   //defaults
+   result :=false;
+   e      :='';
+   dtext  :=nil;
+
+   try
+   //filter
+   x:=stripwhitespace_lt(x);
+   if (x='') then exit;
+
+   //init
+   xlen  :=low__len(x);
+   xpos  :=0;
+   dtext :=small__new8;
+
+   //.make lines
+   swapchars(x,';',#10);
+
+   //read lines and REPLACE system variable references with their actual values
+   while low__nextline1(x,xline,xlen,xpos) do
+   begin
+
+   case xsysvals(xline,e) of
+   true:dtext.sadd(xline+rcode);
+   else goto skipend;
+   end;
+
+   end;//loop
+
+   //get
+   xdefvals.text:=dtext.text;
+
+   //check
+   if (xdefvals.s['result']='') and emsg('Default var "result" has no value')                   then goto skipend;
+   if (intstr32(strint32(xdefvals.s['result'])) <> xdefvals.s['result']) and emsg('Numerical value for default var "result" is corrupt') then goto skipend;
+
+   if (xdefvals.count<=0)       and emsg('Default vars specified but no variables were found')  then goto skipend;
+
+   //succesful
+   result:=(xdefvals.count>=1);
+   skipend:
+
+   except;end;
+
+   //free
+   small__free8(@dtext);
+
+   end;
+
+   function xdefvalsononeline(var xline:string):boolean;
+   label
+      skipend;
+   var
+      p:longint;
+      a:tstr8;
+
+      function xhaschar(const x:string;v:char):boolean;
+      var
+         p:longint;
+      begin
+
+      //defaults
+      result:=false;
+
+      //get
+      if (x<>'') then for p:=1 to low__len(x) do if (v=x[p-1+stroffset]) then
+         begin
+
+         result:=true;
+         break;
+
+         end;//p
+
+      end;
+
+   begin
+
+   //defaults
+   result :=false;
+   xline  :='';
+   a      :=nil;
+
+   try
+
+   //check
+   if (xdefvals.count<=0) then
+      begin
+
+      result:=true;
+      exit;
+
+      end;
+
+   //init
+   a:=small__new8;
+
+   //get
+   for p:=0 to (xdefvals.count-1) do if not strmatch(xdefvals.n[p],'result') then //exclude return "result" - 30aug2025
+   begin
+
+   if xhaschar(xdefvals.n[p],';') and emsg('Default var has a ";" in its name') then goto skipend;
+   if xhaschar(xdefvals.n[p],':') and emsg('Default var has a ":" in its name') then goto skipend;
+
+   if xhaschar(xdefvals.v[p],';') and emsg('Default var has a ";" in its value') then goto skipend;
+   if xhaschar(xdefvals.v[p],':') and emsg('Default var has a ":" in its value') then goto skipend;
+
+   a.sadd( insstr(#32,a.count>=1) + xdefvals.n[p]+':'+xdefvals.v[p]+';' );
+
+   end;//p
+
+   //set
+   xline:=a.text;
+
+   //successful
+   result:=true;
+   skipend:
+
+   except;end;
+
+   //free
+   small__free8(@a);
+
+   end;
+
+begin
+
+//defaults
+result          :=false;
+//xprocline       :='';
+//xout            :='';
+//xoutlisting     :='';
+e               :='';
+//xnamelen        :=0;
+//xhasdefault     :=false;
+xorgprocname    :='';
+xdefvals        :=nil;
+
+//check core vars
+if (xcore.lhistory=nil) or (xcore.lprocvars=nil) or (xcore.lprocline=nil) or
+   (xcore.lprocbody=nil) or (xcore.lprocinfo=nil) or (xcore.dunit=nil) or
+   (xcore.lproctype=nil) then exit;
+
+try
+
+//filter
+x:=stripwhitespace_lt(x);
+if (x='') then
+   begin
+
+   result:=true;
+   exit;
+
+   end;
+
+//check -> ignore -> line is a comment
+if (strcopy1(x,1,2)='//') then
+   begin
+
+   result:=true;
+   exit;
+
+   end;
+
+
+//------------------------------------------------------------------------------
+//init
+x            :=x+';';//force terminator char
+xlen         :=low__len(x);
+pc           :=0;
+xhasdefault  :=false;
+xfunc        :=false;
+xvarlist     :='';
+xvarlistBARE :='';
+xreturntype  :='';
+xloadType    :='';
+dname        :='';
+lname        :='';
+lnameindex   :=dnone;
+xdefvals     :=tfastvars.create;//used for the default return value when proc is not available, agmonst other things
+
+//------------------------------------------------------------------------------
+//proc type
+lp    :=1;
+bol1  :=false;
+
+for p:=1 to xlen do if (c(p)=#32) then
+   begin
+
+   str1:=stripwhitespace_lt(strcopy1(x,lp,p-lp));
+
+   if strmatch(str1,'function')  then
+      begin
+
+      xfunc :=true;
+      bol1  :=true;
+
+      end
+   else if strmatch(str1,'procedure') then
+      begin
+
+      xfunc :=false;
+      bol1  :=true;
+
+      end;
+
+   break;
+
+   end;//p
+
+//.skip
+if not bol1 then
+   begin
+
+   result:=true;
+   goto skipend;
+
+   end;
+
+
+//------------------------------------------------------------------------------
+//is it external -> only process external procs
+bol1:=false;
+
+for p:=xlen downto 1 do
+begin
+
+if      ( c(p)=')' ) then break
+else if ( (c(p)='e') or (c(p)='E') ) and ( strmatch( strcopy1(x,p-1,10),' external ' ) or strmatch( strcopy1(x,p-1,10),';external ' ) ) then
+   begin
+
+   bol1:=true;
+   break;
+
+   end;
+
+end;//p
+
+if not bol1 then
+   begin
+
+   result:=true;
+   goto skipend;
+
+   end;
+
+
+//------------------------------------------------------------------------------
+//org.procname
+lp:=1;
+
+for p:=1 to xlen do
+begin
+
+if      (c(p)=#32) then lp:=p+1
+else if (c(p)='(') or (c(p)=':') or (c(p)=';') then
+   begin
+
+   xorgprocname:=strcopy1(x,lp,p-lp);
+   break;
+
+   end;
+
+end;//p
+
+if (xorgprocname='') and emsg('Original proc name is invalid') then goto skipend;
+
+
+//------------------------------------------------------------------------------
+//proc varlist
+lp:=1;
+
+for p:=1 to xlen do
+begin
+
+if      (c(p)='(') then lp:=p+1
+else if (c(p)=')') then
+   begin
+
+   xvarlist:=stripwhitespace_lt(strcopy1(x,lp,p-lp));
+   break;
+
+   end
+else if (c(p)=':') and (lp<=0) then break;
+
+end;//p
+
+if (xvarlist<>'') then
+   begin
+
+   str1:=xvarlist+';';
+   bol1:=true;
+   lp  :=1;
+
+   for p:=1 to low__len(str1) do
+   begin
+
+   vc:=str1[p-1+stroffset];
+
+   if (vc=';') or (vc=',') then
+      begin
+
+      str2:=stripwhitespace_lt(strcopy1(str1,lp,p-lp));
+
+      //.strip trailing ":type" if present
+      if (str2<>'') then for p2:=1 to low__len(str2) do if (str2[p2-1+stroffset]=':') then
+         begin
+
+         str2:=stripwhitespace_lt(strcopy1(str2,1,p2-1));
+         break;
+
+         end;
+
+
+      //.stripleading "var" and "const" etc
+      if (str2<>'') then for p2:=low__len(str2) downto 1 do if (str2[p2-1+stroffset]=#32) then
+         begin
+
+         str2:=strcopy1(str2,p2+1,low__len(str2));
+         break;
+
+         end;
+
+      if (str2='') and emsg('A var name in varlist has no name') then goto skipend;
+
+      xvarlistBARE:=xvarlistBARE+insstr(', ',xvarlistBARE<>'')+str2;
+
+      lp:=p+1;
+
+      end
+
+   else if (vc=';') then lp:=p+1;
+
+   end;//p
+
+   end;
+
+if (xvarlist<>'') and (xvarlistBARE='') and emsg('Varlist and varlistBARE mismatch') then goto skipend;
+
+
+//------------------------------------------------------------------------------
+//proc return type
+lp          :=1;
+bol1        :=true;
+xcolon      :=false;
+
+for p:=1 to xlen do
+begin
+
+if      (c(p)='(') then bol1:=false
+else if (c(p)=')') then
+   begin
+
+   bol1:=true;
+   lp  :=p+1;
+
+   end;
+
+if bol1 then
+   begin
+
+   if      (c(p)=':') then
+      begin
+
+      lp     :=p+1;
+      xcolon :=true;
+
+      end
+
+   else if (c(p)=';') then
+      begin
+
+      if xcolon then
+         begin
+
+         xreturntype:=strlow(stripwhitespace_lt(strlow( strcopy1(x,lp,p-lp) )));
+         if (xreturntype='stdcall') then xreturntype:='';
+
+         end;
+
+      break;
+
+      end;
+   end;
+
+end;//p
+
+//check
+case xfunc of
+true:if (xreturntype='')  and emsg('Function as no return type')             then goto skipend;
+else if (xreturntype<>'') and emsg('Procedure cannot have a return type "'+xreturntype+'"') then goto skipend;
+end;//case
+
+//check return type
+if (xreturntype<>'') then
+   begin
+
+   if
+   //boolean
+   rb('bool') or
+
+   //longint
+   ri('integer') or ri('longint') or ri('hbrush') or ri('COLORREF') or ri('dword') or ri('hdc') or ri('hbitmap') or ri('hwnd') or
+   ri('hglobal') or ri('hcursor') or ri('hgdiobj') or ri('hmodule') or ri('hicon') or ri('hrgn') or ri('lresult') or ri('uint') or
+   ri('hresult') or ri('HINST') or ri('hfont') or ri('SERVICE_STATUS_HANDLE') or ri('MMRESULT') or ri('tsocket') or
+   ri('MCIERROR') or ri('tbasic_lresult') or ri('hmenu') or
+
+
+   //word
+   rw('atom') or
+
+   //pointer
+   rp('pointer') or rp('farproc') or
+
+//   //thandle
+   rh('thandle') or rh('SC_HANDLE') then
+
+      begin
+      //ok
+      end
+
+   //unknown return type -> report error
+   else if emsg('Unknown return type "'+xreturntype+'"') then goto skipend;
+
+   end;
+
+
+//------------------------------------------------------------------------------
+//dll name
+lp:=0;
+pc:=0;
+
+for p:=xlen downto 1 do
+begin
+
+if (c(p)='''') then
+   begin
+
+   inc(pc);
+
+   case pc of
+   1:lp:=p-1;
+   2:begin
+
+      dname:=stripwhitespace_lt(strcopy1(x,p+1,lp-p));//case-sensitive dll name
+      break;
+
+      end;
+   end;//case
+
+   end;
+
+end;//p
+
+//.check name
+if (dname='')  and emsg('Proc name is "nil"') then goto skipend;
+xcore.longestname:=largest32(xcore.longestname,low__len(dname));
+
+
+//------------------------------------------------------------------------------
+//lib name
+lp:=0;
+pc:=0;
+
+for p:=xlen downto 1 do
+begin
+
+if      ( c(p)=')' ) then break
+else if ( (c(p)='e') or (c(p)='E') ) and ( strmatch( strcopy1(x,p-1,10),' external ' ) or strmatch( strcopy1(x,p-1,10),';external ' ) ) then
+   begin
+
+   //find lib name
+   lp  :=1;
+   pc  :=0;
+
+   for p2:=p to xlen do
+   begin
+
+   if (c(p2)=#32) then
+      begin
+
+      inc(pc);
+
+      if (pc>=2) then
+         begin
+
+         lname:=strlow(stripwhitespace_lt(strcopy1(x,lp,p2-lp)));
+         break;
+
+         end;
+
+      lp:=p2+1;
+
+      end;
+
+
+   end;//p2
+
+   break;
+
+   end;
+
+end;//p
+
+if (lname='') and emsg('Proc has no lib name') then goto skipend;
+
+//similar names conversion
+if      (lname='mmsyst')      then lname:='winmm'
+else if (lname='winspl')      then lname:='winspool'
+else if (lname='winsocket')   then lname:='wsock32';
+
+if (not win__finddllname(lname,lnameindex)) and emsg('Li'+'b name unknown "'+lname+'"') then goto skipend;
+
+
+//------------------------------------------------------------------------------
+//default value - optional -> "[[some value]]" (without double quotes)
+lp    :=xlen;
+bol1  :=false;
+bol2  :=false;
+etmp  :='';
+
+for p:=1 to xlen do
+begin
+
+if (c(p)='[') and strmatch(strcopy1(x,p,2),'[[') and (not bol1) then
+   begin
+
+   bol1 :=true;
+   lp   :=p+2;
+
+   end
+else if bol1 and ((c(p)=']') and (strcopy1(x,p,2)=']]')) then
+   begin
+
+   bol2        :=true;
+   xhasdefault :=xreadDefaultVars( strcopy1(x,lp,p-lp) ,etmp);
+
+   break;
+
+   end;
+
+end;//p
+
+if bol1 and (not bol2) and emsg('Warning:'+rcode+'Default value started but not finished')                   then goto skipend;
+
+if bol1 and bol2 and (not xhasdefault) and emsg('Warning:'+rcode+'Default value equates to an usable value' + insstr(' ('+etmp+')',etmp<>'') ) then goto skipend;
+
+if xhasdefault then inc(xcore.defaultcount);
+
+
+//------------------------------------------------------------------------------
+//generate proc code
+
+//init
+xfuncbody      :=insstr('(',xvarlist<>'')+xvarlist+insstr(')',xvarlist<>'');
+xfuncbodyBARE  :=insstr('(',xvarlist<>'')+xvarlistBARE+insstr(')',xvarlist<>'');
+xfuncbody2     :=low__aorbstr('procedure','function',xfunc)+xfuncbody+insstr(':',xreturntype<>'')+xreturntype;
+pname          :='t'+xorgprocname;
+vname          :='v'+xorgprocname;
+xprocline      :=low__aorbstr('procedure','function',xfunc)+#32+xorgprocname+xfuncbody+insstr(':',xreturntype<>'')+xreturntype+';';
+
+//.exclude repeates
+if not (xcore.lhistory as tdynamicnamelist).addonce(xprocline) then
+   begin
+
+   result:=true;
+   goto skipend;
+
+   end;
+
+//.proc vars
+str__as8f(@xcore.lprocvars).sadd( '   '+xpad1(vname)+'='+k64(xcore.proccount)+';' + rcode );
+
+//.proc types
+str__as8f(@xcore.lproctype).sadd('   '+xpad1(pname)+'='+xfuncbody2+'; stdcall;'+rcode );
+
+//.proc line
+str__as8f(@xcore.lprocline).sadd( xprocline + rcode );
+
+//.proc info -> optional -> only add an entry if default vars present
+case xhasdefault of
+true:if not xdefvalsononeline(xdefvalsline) then goto skipend;
+else xdefvalsline:='';
+end;//case
+
+str1:=intstr32(strint32( xdefvals.s['result'] ));
+case (xdefvalsline<>'') of
+true:str__as8f(@xcore.lprocinfo).sadd( xpad0(vname)+':s4( ' + xpad2(str1) +',d'+xpad3(win__dllname2(lnameindex,false)) + ','+xpad4('''' + dname + '''') + ',' + xpad4(''''+xdefvalsline+'''') + ');' + insstr('//custom return value',str1<>'0') + rcode );
+else str__as8f(@xcore.lprocinfo).sadd( xpad0(vname)+':s3( ' + xpad2(str1) +',d'+xpad3(win__dllname2(lnameindex,false)) + ','+xpad4('''' + dname + '''') + ');' + insstr('//custom return value',str1<>'0') + rcode );
+end;//case
+
+//.proc body
+str__as8f(@xcore.lprocbody).sadd(
+
+'//'+x+rcode+//keep a copy of the original proc
+rcode+
+xprocline+rcode+
+'var'+rcode+
+'   a:pointer;'+rcode+
+'begin'+rcode+
+
+low__aorbstr(
+ 'if win__use'+xloadType+'('+vname+',a) then '+pname+'(a)'+xfuncbodyBARE+';'+rcode,//as a procedure
+ 'if win__use'+xloadType+'(result,'+vname+',a) then result:='+pname+'(a)'+xfuncbodyBARE+';'+rcode,//as a function
+xfunc)+
+
+'win__dec;'+rcode+
+'end;'+rcode+
+rcode+
+rcode+
+
+'');
+
+//.inc
+inc(xcore.proccount);
+
+
+//------------------------------------------------------------------------------
+//successful
+result:=true;
+
+skipend:
+except;end;
+
+//free
+freeobj(@xdefvals);
+
+end;
+
+function win__makeprocs(const sf,df,dversionlabel:string):boolean;
+label
+   skipend;
+const
+   xpointPrefix='//## [';
+   xstartpoint=xpointPrefix+'win32-api-scanner-start-point]';
+   xstoppoint =xpointPrefix+'win32-api-scanner-stop-point]';
+var
+   a:tdynamicstring;
+   xcore:twinscannerinfo;
+   e,etmp,ecdprocline,dv,dv2:string;
+   xpointPrefixLEN,int1,p:longint;
+   bol1,xscanning:boolean;
+
+   function emsg(const x:string):boolean;
+   begin
+
+   result:=true;
+   if (e='') then e:=x;
+
+   end;
+
+   function m(const x:string):boolean;
+   begin
+   result:=strmatch( x, strcopy1(a.value[p],1,low__len(x)) );
+   end;
+
+   procedure ladd(const x:string);//add line
+   begin
+
+   str__as8f(@xcore.dunit).sadd(x+rcode);
+
+   end;
+
+   procedure radd(const x:string);//raw add (no return code)
+   begin
+
+   str__as8f(@xcore.dunit).sadd(x);
+
+   end;
+
+   function mt(xok:boolean):string;
+   begin
+
+   result:='-- Win32 Proc Extraction '+low__aorbstr('Failed','Successful',xok)+' ('+io__extractfilename(sf)+') --'+rcode+rcode;
+
+   end;
+
+   function sm(const xmsg:string):boolean;
+   begin
+
+   result:=true;
+   showtext(mt(true)+xmsg);
+
+   end;
+
+   function se(const xmsg:string):boolean;
+   begin
+
+   result:=true;
+   showerror(mt(false)+xmsg);
+
+   end;
+
+   function xpad1(const x:string):string;
+   const
+      xline='                                                      ';
+   begin
+   result:=x+strcopy1(xline,1,low__len(xline)-low__len(x));
+   end;
+
+begin
+
+//defaults
+result             :=false;
+a                  :=nil;
+low__cls(@xcore,sizeof(xcore));
+e                  :='';
+xscanning          :=false;
+xpointPrefixLEN    :=low__len(xpointPrefix);
+
+try
+//check
+if not io__fileexists(sf) and emsg('Source filename does not exist:'+rcode+sf) then goto skipend;
+if strmatch(sf,df) and emsg('Source and destination filenames are the same')   then goto skipend;
+
+//init
+a              :=tdynamicstring.create;
+a.text         :=io__fromfilestr2( sf );
+
+if (a.count<=0) and emsg('No text to process') then goto skipend;
+
+//.core
+with xcore do
+begin
+
+lhistory   :=tdynamicnamelist.create;//tracks repeat entries
+lprocvars  :=str__new8;//(tstr8) list of procs as constants
+lproctype  :=str__new8;//(tstr8) list of procs as record types
+lprocline  :=str__new8;//(tstr8) list of procs as a procedure or function definition line
+lprocbody  :=str__new8;//(tstr8) list of procs as a procedure or function text
+lprocinfo  :=str__new8;//(tstr8) list of procs in a management function(s)
+dunit      :=str__new8;
+
+end;
+
+
+//get
+for p:=0 to pred(a.count) do
+begin
+
+//.start/stop scan
+if (strcopy1(a.value[p],1,xpointPrefixLEN)=xpointPrefix) then
+   begin
+
+   if      m(xstartpoint) then xscanning:=true
+   else if m(xstoppoint)  then break;
+
+   end;
+
+//.read line
+if xscanning and (not win__makeproc(a.value[p],xcore,e)) then
+   begin
+
+   e:='Error at line '+k64(p)+rcode+rcode+e;
+   goto skipend;
+
+   end;
+
+end;//p
+
+//check
+if (not xscanning) and emsg('Start/stop scanner commands not found in source code') then goto skipend;
+
+
+//build unit "gosswin2.pas"
+
+//unit header
+ladd('unit gosswin2;');
+ladd('');
+ladd('interface');
+ladd('');
+ladd('uses gosswin;');
+ladd('{$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-}');
+ladd('//## ==========================================================================================================================================================================================================================');
+ladd('//##');
+ladd('//## MIT License');
+ladd('//##');
+ladd('//## Copyright '+low__yearstr(2025)+' Blaiz Enterprises ( http://www.blaizenterprises.com )');
+ladd('//##');
+ladd('//## Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation');
+ladd('//## files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,');
+ladd('//## modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software');
+ladd('//## is furnished to do so, subject to the following conditions:');
+ladd('//##');
+ladd('//## The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.');
+ladd('//##');
+ladd('//## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES');
+ladd('//## OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE');
+ladd('//## LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN');
+ladd('//## CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.');
+ladd('//##');
+ladd('//## ==========================================================================================================================================================================================================================');
+ladd('//## Note..................... ** This is an automatically generated unit, created by "gosswin.win__make_gosswin2_pas" **');
+ladd('//## Library.................. dynamically loaded and managed 32bit Windows api''s (gosswin2.pas)');
+ladd('//## Version.................. '+dversionlabel);
+ladd('//## Items.................... '+k64(xcore.proccount) );
+ladd('//## Last Updated ............ '+strlow(low__remcharb(low__datestr(date__now,4,false),#32)) );
+ladd('//## ==========================================================================================================================================================================================================================');
+
+ladd('');
+ladd('');
+
+
+//unit code
+ladd('const');
+radd( '   '+xpad1('vwin____proccount')+'='+k64(xcore.proccount)+';//total number of Win32 api procs defined' + rcode );
+radd( str__as8f(@xcore.lprocvars).text );
+
+ladd('');
+ladd('');
+ladd('type');
+radd( str__as8f(@xcore.lproctype).text );
+
+ladd('');
+ladd('');
+ladd('function win____slotinfo(const xslot:longint;var dname,rvalue:longint;var pname:string;var xmisc:string):boolean;');
+radd( str__as8f(@xcore.lprocline).text );
+
+ladd('');
+ladd('');
+ladd('implementation');
+
+ladd('');
+ladd('');
+ladd('function win____slotinfo(const xslot:longint;var dname,rvalue:longint;var pname:string;var xmisc:string):boolean;');
+ladd('');
+ladd('   procedure s3(const _rvalue,_dname:longint;const _pname:string);');
+ladd('   begin');
+ladd('');
+ladd('   rvalue :=_rvalue;');
+ladd('   dname  :=_dname;');
+ladd('   pname  :=_pname;');
+ladd('');
+ladd('   end;');
+ladd('');
+ladd('   procedure s4(const _rvalue,_dname:longint;const _pname,_xmisc:string);');
+ladd('   begin');
+ladd('');
+ladd('   rvalue :=_rvalue;');
+ladd('   dname  :=_dname;');
+ladd('   pname  :=_pname;');
+ladd('   xmisc  :=_xmisc;');
+ladd('');
+ladd('   end;');
+ladd('');
+ladd('begin');
+ladd('');
+ladd('//defaults');
+ladd('result :=true;');
+ladd('dname  :=dnone;');
+ladd('rvalue :=0;');
+ladd('pname  :='''';');
+ladd('xmisc  :='''';');
+ladd('');
+ladd('//get');
+ladd('case xslot of');
+radd( str__as8f(@xcore.lprocinfo).text );
+ladd('-1:;//placeholder');
+ladd('end;//case');
+ladd('');
+ladd('end;');
+
+ladd('');
+ladd('');
+radd( str__as8f(@xcore.lprocbody).text );
+
+ladd('end.');
+
+
+//save unit
+if (not io__tofile(df,@xcore.dunit,etmp)) and emsg('Save unit failed ('+etmp+')') then goto skipend;
+
+//successful
+result:=true;
+skipend:
+
+except;end;
+
+//free
+freeobj(@a);
+freeobj(@xcore.lhistory);
+freeobj(@xcore.lprocvars);
+freeobj(@xcore.lproctype);
+freeobj(@xcore.lprocline);
+freeobj(@xcore.lprocbody);
+freeobj(@xcore.lprocinfo);
+freeobj(@xcore.dunit);
+
+//show result
+case result of
+true:begin
+
+   sm(
+   k64(xcore.proccount)+' proc'+insstr('s',xcore.proccount<>1)+' converted to dynamic loading'+rcode+
+   k64(xcore.longestname)+' char'+insstr('s',xcore.longestname<>1)+' is the longest dll proc name'+rcode+
+   k64(xcore.defaultcount)+' proc'+insstr('s',xcore.defaultcount<>1)+' defined with default vars'+rcode+
+   '');
+
+   end;
+else se(e);
+end;//case
+
+end;
+
+procedure win__make_gosswin2_pas;
+const
+   dversionlabel='4.00.531';//'ver'
+begin
+win__makeprocs( io__asfolderNIL(io__extractfilepath(io__exename))+'gosswin.p'+'as', io__asfolderNIL(io__extractfilepath(io__exename))+'gosswin2.p'+'as' ,dversionlabel );
+end;
+
+function win__errmsg(const e:longint):string;
+begin
+
+case e of
+waOK                :result:='OK';
+waBadDLLName        :result:='FAIL: Bad D'+'LL name';
+waBadProcName       :result:='FAIL: Bad Pr'+'oc name';
+waDLLLoadFail       :result:='FAIL: D'+'LL not loaded';
+waProcNotFound      :result:='FAIL: Pr'+'oc not found';
+else                 result:='-';
+end;//case
+
+end;
+
+function win__dllname(const xindex:longint):string;
+begin
+result:=win__dllname2(xindex,false);
+end;
+
+function win__dllname2(const xindex:longint;xincludeext:boolean):string;
+begin
+
+case xindex of
+duser32      :result:='use'+'r32';
+dshell32     :result:='sh'+'el'+'l32';
+dShcore      :result:='S'+'hco'+'re';
+dxinput1_4   :result:='xin'+'put'+'1_4';
+dadvapi32    :result:='adv'+'ap'+'i32';
+dkernel32    :result:='ke'+'rne'+'l32';
+dmpr         :result:='mp'+'r';
+dversion     :result:='ver'+'si'+'on';
+dcomctl32    :result:='co'+'mct'+'l32';
+dgdi32       :result:='gd'+'i32';
+dopengl32    :result:='open'+'gl32';
+dwintrust    :result:='wi'+'ntr'+'ust';
+dole32       :result:='ol'+'e32';
+doleaut32    :result:='olea'+'ut32';
+dolepro32    :result:='olep'+'ro32';
+dwinmm       :result:='win'+'mm';
+dwsock32     :result:='wso'+'ck32';
+dwinspool    :result:='win'+'s'+'pool';//.drv
+dcomdlg32    :result:='co'+'mdl'+'g32';//04oct2025
+else          result:='';
+end;//case
+
+//extension
+if xincludeext then
+   begin
+
+   case xindex of
+   dwinspool :result:=result+'.'+'dr'+'v';
+   else       result:=result+'.'+'d'+'ll';
+   end;//case
+
+   end;
+
+end;
+
+function win__finddllname(const xname:string;var xindex:longint):boolean;
+var
+   p:longint;
+begin
+
+//defaults
+result :=false;
+xindex :=dnone;
+
+//find
+for p:=1 to dmax do if strmatch(xname, win__dllname2(p,false) ) then
+   begin
+
+   result :=true;
+   xindex :=p;
+   break;
+
+   end;//p
+
+end;
+
+
+procedure win__inc(const xslot:longint);
+begin
+
+//check
+if (xslot<0) or (xslot>high(system_wincore.u)) or (not system_wincore.u[xslot]) then exit;
+
+//set
+inc164(system_wincore.c[xslot]);//number of calls to this proc
+inc164(system_wincore.pcalls);//total number of proc calls (covers all procs)
+
+if (system_wincore.d[xslot]>dnone) and (system_wincore.d[xslot]<=dmax) then inc164(system_wincore.dcalls[ system_wincore.d[xslot] ]);//number of calls to this proc
+
+if (system_wincore.tracedepth>=0) and (system_wincore.tracedepth<=high(system_wincore.tracelist)) then system_wincore.tracelist[system_wincore.tracedepth]:=xslot;
+
+inc132(system_wincore.tracedepth);
+
+end;
+
+procedure win__dec;
+begin
+
+dec132(system_wincore.tracedepth);
+
+//win__depthtrace(20);
+
+end;
+
+procedure win__depthtrace(xlimit:longint);
+var
+   str1,v:string;
+   int1,i,p:longint;
+begin
+
+v:='';
+
+for p:=frcrange32(system_wincore.tracedepth,1,50) downto 1 do
+begin
+
+i:=system_wincore.tracedepth-p;
+if (i>=0) and (i<=high(system_wincore.tracelist)) then
+   begin
+
+   int1:=system_wincore.tracelist[i];
+
+   if (int1>=0) and (int1<=high(system_wincore.u)) then
+      begin
+
+      if not system_wincore.u[int1]        then str1:='proc not in use'
+      else if (system_wincore.p[int1]=nil) then str1:='proc not supported'
+      else                                      str1:=strdefb(win__procname(int1),'proc has no name');
+
+      end
+   else                                         str1:='< trace error >';
+
+   v:=v+intstr32(i)+'. ['+str1+']'+rcode;
+
+   end
+else break;
+
+end;//p
+
+if (v='') then v:='No trace available';
+
+showtext('-- Trace --'+rcode+v);
+
+end;
+
+function win__infocount:longint;
+begin
+result:=1 + system_wincore.dcount + 1 + 2 + system_wincore.pcount;
+end;
+
+function win__infofind(xindex:longint;var v1,v2,v3,v4:string;var xtitle:boolean):boolean;
+label
+   redo;
+var
+   i:longint;
+
+   function xfind1(var i:longint):boolean;
+   var
+      tc,c,p:longint;
+   begin
+
+   //defaults
+   result :=false;
+   i      :=0;
+   tc     :=xindex+1-2;
+   c      :=0;
+
+   //find
+   for p:=0 to high(system_wincore.du) do if system_wincore.du[p] then
+      begin
+
+      inc(c);
+
+      if (c=tc) then
+         begin
+
+         i      :=p;
+         result :=true;
+         break;
+
+         end;
+
+      end;//p
+
+   end;
+
+   function xfind2(var i:longint):boolean;
+   var
+      tc,c,p:longint;
+   begin
+
+   //defaults
+   result :=false;
+   i      :=0;
+   tc     :=xindex+1-system_wincore.dcount-4;
+   c      :=0;
+
+   //find
+   for p:=0 to high(system_wincore.u) do if system_wincore.u[p] then
+      begin
+
+      inc(c);
+
+      if (c=tc) then
+         begin
+
+         i      :=p;
+         result :=true;
+         break;
+
+         end;
+
+      end;//p
+
+   end;
+
+begin
+
+//defaults
+result :=false;
+v1     :='';
+v2     :='';
+v3     :='';
+v4     :='';
+xtitle :=false;
+
+//get
+
+if (xindex=0) then
+   begin
+
+   xtitle :=true;
+   v1     :='DLL Name';
+   v2     :='Status';
+   v3     :='Calls';
+   result :=true;
+
+   end
+
+else if (xindex=1) then
+   begin
+
+   v1     :='Total';
+   v2     :='-';
+   v3     :=k64(system_wincore.pcalls);
+   result :=true;
+
+   end
+
+else if xfind1(i) then
+   begin
+
+   v1        :=win__dllname2(i,true);
+   v2        :=win__errmsg(system_wincore.de[i]);
+   v3        :=k64(system_wincore.dcalls[i]);
+
+   result    :=true;
+
+   end
+
+else if (xindex=(system_wincore.dcount+2)) then
+   begin
+
+   //space
+
+   end
+
+else if (xindex=(system_wincore.dcount+3)) then
+   begin
+
+   xtitle :=true;
+   v1     :='API Name';
+   v2     :='Status';
+   v3     :='Calls';
+   result :=true;
+
+   end
+
+else if xfind2(i) then
+   begin
+
+   v1        :=win__procname(i);
+   v2        :=win__errmsg(system_wincore.e[i]);
+   v3        :=k64(system_wincore.c[i]);
+
+   result    :=true;
+
+   end;
+
+end;
+
+function win__procCallCount(const xslot:longint):comp;
+begin
+if (xslot>=0) and (xslot<=high(system_wincore.u)) and system_wincore.u[xslot] then result:=system_wincore.c[xslot] else result:=0;
+end;
+
+function win__proccount:longint;
+begin
+result:=vwin____proccount;
+end;
+
+function win__procload:longint;
+begin
+result:=system_wincore.pOK;
+end;
+
+function win__proccalls:comp;
+begin
+result:=system_wincore.pcalls;
+end;
+
+function win__dllload:longint;
+begin
+result:=system_wincore.dOK;
+end;
+
+procedure win__init;//should be called from app__boot
+begin
+
+//check
+if system_wininit then exit else system_wininit:=true;
+
+//get
+low__cls(@system_wincore,sizeof(system_wincore));//30aug2025
+
+end;
+
+function win__ok(const xslot:longint):boolean;
+begin
+
+case xslot of
+0..high(system_wincore.u) :result:=( system_wincore.u[xslot] or win__loaded(xslot) ) and (system_wincore.p[xslot]<>nil);
+else                       result:=false;
+end;//case
+
+end;
+
+function win__procname(const xslot:longint):string;
+var
+   dname,rvalue:longint;
+   xmisc:string;
+begin
+win__slotinfo(xslot,dname,rvalue,result,xmisc);
+end;
+
+function win__slotinfo(const xslot:longint;var dname,rvalue:longint;var pname:string;var xmisc:string):boolean;
+begin
+result:=win____slotinfo(xslot,dname,rvalue,pname,xmisc);
+end;
+
+function win__loaded(const xslot:longint):boolean;
+var
+   a:hmodule;
+   b:pointer;
+   dname,rvalue:longint;
+   pname:string;
+   smisc:string;
+
+   function emsg(const xmsg:longint):boolean;
+   begin
+
+   result                  :=true;
+   system_wincore.e[xslot] :=xmsg;
+
+   end;
+
+begin
+
+//defaults
+result      :=false;
+
+//range check
+if (xslot<0) or (xslot>high(system_wincore.u)) then
+   begin
+
+   //out of range
+
+   end
+
+//load now
+else if (not system_wincore.u[xslot]) then
+   begin
+
+   //init
+   system_wincore.u[xslot] :=true;//mark slot as in use - all other values are zeroed out at this stage, which is their default state
+
+   inc132(system_wincore.pcount);
+   inc132(system_wincore.pOK);
+
+
+   //fetch slot info
+   win__slotinfo(xslot,dname,rvalue,pname,smisc);
+
+
+   //.set important values for fast access
+   system_wincore.r [xslot]  :=rvalue;//default return value for proc when unable to access it (e.g. fails to load)
+   system_wincore.r2[xslot]  :=frcrange32(rvalue,0,max16);//26sep2025
+   system_wincore.d [xslot]  :=dname; //dll name as an index
+
+
+   //.check DLL and PROC names are valid
+   if ( (dname<=dnone) or (dname>dmax) ) and emsg(waBadDLLName)  then exit;
+   if (pname='')                         and emsg(waBadProcName) then exit;
+
+
+   //load dll -> on failure -> stop here
+   a:=system_wincore.dh[dname];
+
+   //.attempt to load the DLL if not already in use (du=true)
+   if (a=0) and (not system_wincore.du[dname]) then
+      begin
+
+      system_wincore.du[dname]:=true;//mark dll slot as in use
+
+      system_wincore.dh[dname] :=win____LoadLibraryA(pchar( win__dllname(dname) ));//cache module handle
+      a                        :=system_wincore.dh[dname];
+
+      system_wincore.de[dname] :=low__aorb(waDLLLoadFail,waOk,a<>0);
+
+      inc132(system_wincore.dcount);
+
+      case (a<>0) of
+      true:inc132(system_wincore.dOK);
+      else inc132(system_wincore.dFAIL);
+      end;//case
+
+      end;
+
+   //check DLL loaded -> on failure -> stop here
+   if (a=0) and emsg(waDLLLoadFail) then exit;
+
+
+   //fetch api proc function pointer by name -> on failure -> stop here
+   b:=win____GetProcAddress(a,PAnsiChar( pname ));
+
+   if (b=nil) then
+      begin
+
+      dec132(system_wincore.pOK);
+      inc132(system_wincore.pFAIL);
+
+      end;
+
+
+   //check proc linked -> on failure -> stop here
+   if (b=nil) and emsg(waProcNotFound) then exit;
+
+
+   //get
+   system_wincore.p[xslot] :=b;//set proc pointer (link to it)
+   result                  :=true;
+
+   end;
+
+end;
+
+function win__usebol(var xdefresult:bool;const xslot:longint;var xptr:pointer):boolean;////26sep2025
+begin
+
+result:=(xslot>=0) and (xslot<=high(system_wincore.u));
+
+if result then
+   begin
+
+   result       :=win__ok(xslot);//26sep2025
+   xdefresult   :=(system_wincore.r[xslot]<>0);//26sep2025
+   xptr         :=system_wincore.p[xslot];
+   win__inc(xslot);
+
+   end
+else
+   begin
+
+   xdefresult   :=false;
+   xptr         :=nil;
+
+   end;
+
+end;
+
+function win__usewrd(var xdefresult:word;const xslot:longint;var xptr:pointer):boolean;//26sep2025
+begin
+
+result:=(xslot>=0) and (xslot<=high(system_wincore.u));
+
+if result then
+   begin
+
+   result       :=win__ok(xslot);//26sep2025
+   xdefresult   :=system_wincore.r2[xslot];//word version
+   xptr         :=system_wincore.p[xslot];
+   win__inc(xslot);
+
+   end
+else
+   begin
+
+   xdefresult   :=0;
+   xptr         :=nil;
+
+   end;
+
+end;
+
+function win__useint(var xdefresult:longint;const xslot:longint;var xptr:pointer):boolean;//26sep2025
+begin
+
+result:=(xslot>=0) and (xslot<=high(system_wincore.u));
+
+if result then
+   begin
+
+   result       :=win__ok(xslot);//26sep2025
+   xdefresult   :=system_wincore.r[xslot];//26sep2025
+   xptr         :=system_wincore.p[xslot];
+   win__inc(xslot);
+
+   end
+else
+   begin
+
+   xdefresult   :=0;
+   xptr         :=nil;
+
+   end;
+
+end;
+
+function win__useptr(var xdefresult:pointer;const xslot:longint;var xptr:pointer):boolean;
+begin
+
+result:=(xslot>=0) and (xslot<=high(system_wincore.u));
+
+if result then
+   begin
+
+   xdefresult   :=nil;
+   result       :=system_wincore.u[xslot] or win__loaded(xslot);
+   xptr         :=system_wincore.p[xslot];
+   win__inc(xslot);
+
+   end
+else
+   begin
+
+   xdefresult   :=nil;
+   xptr         :=nil;
+
+   end;
+
+end;
+
+function win__usehnd(var xdefresult:thandle;const xslot:longint;var xptr:pointer):boolean;
+begin
+
+result:=(xslot>=0) and (xslot<=high(system_wincore.u));
+
+if result then
+   begin
+
+   xdefresult   :=0;
+   result       :=system_wincore.u[xslot] or win__loaded(xslot);
+   xptr         :=system_wincore.p[xslot];
+   win__inc(xslot);
+
+   end
+else
+   begin
+
+   xdefresult   :=0;
+   xptr         :=nil;
+
+   end;
+
+end;
+
+function win__use(const xslot:longint;var xptr:pointer):boolean;
+begin
+
+result:=(xslot>=0) and (xslot<=high(system_wincore.u));
+
+if result then
+   begin
+
+   result       :=system_wincore.u[xslot] or win__loaded(xslot);
+   xptr         :=system_wincore.p[xslot];
+   win__inc(xslot);
+
+   end
+else
+   begin
+
+   xptr         :=nil;
+
+   end;
+
+end;
+
+procedure win__errbol(var xresult:bool;const xreturn:bool);
+begin
+
+if (xresult<>xreturn) then inc132(system_wincore.ecount);
+xresult:=xreturn;
+
+end;
+
+procedure win__errwrd(var xresult:word;const xreturn:word);
+begin
+
+if (xresult<>xreturn) then inc132(system_wincore.ecount);
+xresult:=xreturn;
+
+end;
+
+procedure win__errint(var xresult:longint;const xreturn:longint);
+begin
+
+if (xresult<>xreturn) then inc132(system_wincore.ecount);
+xresult:=xreturn;
+
+end;
+
+procedure win__errptr(var xresult:pointer;const xreturn:pointer);
+begin
+
+if (xreturn=nil) then inc132(system_wincore.ecount);
+xresult:=xreturn;
+
+end;
+
+procedure win__errhnd(var xresult:thandle;const xreturn:thandle);
+begin
+
+if (xreturn=0) then inc132(system_wincore.ecount);
+xresult:=xreturn;
+
+end;
+
+
 //xbox controller procs --------------------------------------------------------
 procedure xbox__stop;//called internally on app shutdown
 var
@@ -3754,7 +5892,6 @@ end;
 
 function xbox__init:boolean;
 var
-   a:hmodule;
    p:longint;
 begin
 //init
@@ -3786,16 +5923,6 @@ if not system_xbox_init then
    system_xbox_statelist[p].index :=p;
    end;//p
 
-   //connect to dll
-   try
-   a:=win____LoadLibraryA(pchar('xinput1_4.dll'));
-   if (a<>0) then
-      begin
-      system_xbox_getstate:=win____GetProcAddress(a,PAnsiChar('XInputGetState'));
-      system_xbox_setstate:=win____GetProcAddress(a,PAnsiChar('XInputSetState'));
-      end;
-   except;end;
-
    //idle support
    low__cls(@system_xbox_idleref,sizeof(system_xbox_idleref));
    system_xbox_idletime :=ms64;
@@ -3811,7 +5938,7 @@ if not system_xbox_init then
    end;
 
 //get
-result:=assigned(system_xbox_getstate) and assigned(system_xbox_setstate);
+result:=win__ok(vwin2____XInputGetState) and win__ok(vwin2____XInputSetState);
 end;
 
 function xbox__info(xindex:longint):pxboxcontrollerinfo;//use "xindex=-1" for defaultindex
@@ -3967,7 +6094,7 @@ if (system_xbox_retryref64[xindex]<>0) and (system_xbox_retryref64[xindex]>=ms64
 
 //get
 //.controller is present and connected
-if xbox__init and ( ((xindex<=xssNativeMax) and (0=system_xbox_getstate(xindex,@s))) or ((xindex=xssKeyboard) and xbox__keyslot_getstate(@s)) or ((xindex=xssMouse) and xbox__mouseslot_getstate(@s)) ) then
+if xbox__init and ( ((xindex<=xssNativeMax) and (0=win2____XInputGetState(xindex,@s))) or ((xindex=xssKeyboard) and xbox__keyslot_getstate(@s)) or ((xindex=xssMouse) and xbox__mouseslot_getstate(@s)) ) then
    begin
    result:=true;
    system_xbox_retryref64[xindex]:=0;//disable retry limit (delay)
@@ -4155,7 +6282,7 @@ s.lmotorspeed:=word(frcrange32(round(system_xbox_statelist[xindex].lm*max16),0,m
 s.rmotorspeed:=word(frcrange32(round(system_xbox_statelist[xindex].rm*max16),0,max16));
 
 //get
-if xbox__init and (0=system_xbox_setstate(xindex,@s)) then
+if xbox__init and (0=win2____XInputSetState(xindex,@s)) then
    begin
    result:=true;
    system_xbox_retryref64[xindex]:=0;
@@ -5464,6 +7591,7 @@ else              s('N/A'+insstr(#32+intstr32(xkey_code),xkey_code>=0) );//10aug
 end;//case
 
 end;
+
 
 end.
 

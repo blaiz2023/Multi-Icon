@@ -1,4 +1,4 @@
-# Multi Icon
+# Multi Icon v1.0.2047 / 09nov2025 / MIT License
 Create stunning, high quality (256 x 256) multi-resolution icons (.ico) and "mainicon" resources (.res) with ease and reliability.  Open an image from file, or paste one in with transparency, or drag and drop an image directly onto the corresponding icon resolutions, then save.
 
 <img src="images/multiicon-screenshot.jpg">
@@ -25,12 +25,14 @@ Save as a multi-resolution icon in either the standard Windows icon (.ico) forma
 * Realtime information: Icon format, size, bits, colors, and file size for target formats ".ico" and ".res"
 * Supports opening / dragging and dropping images in the following file formats: PNG, GIF, JPG, JIF, JPEG, TJ32, BMP, DIB, ICO, CUR, ANI, TEA, TGA, PPM, PGM, PBM, PNM, XBM and IMG32
 * Drag and drop images between resolutions in app
+* Language: Select from a list of built-in languages, or enter a custom language ID (for ".res" files)
 * Straightforward, fuss-free operation
-* Options Window - Easily change app color, font and settings
+* Options Window - Easily change app color, font, and settings
 * Portable
+* Smart Source Code (Borland Delphi 3 and Lazarus 2)
 
 # Download
-<a href="src/multiicon.exe">multiicon.exe</a> - windows all
+Download <a href="src/multiicon.exe">multiicon.exe</a> or from the "<a href="bin/">bin</a>" or "<a href="src/">src</a>" folders above.
 
 # Images
 <img src="images/multiicon-screenshot2.jpg">

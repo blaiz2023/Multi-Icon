@@ -8,7 +8,7 @@ interface
 {$ifdef con3} {$define con2} {$define net} {$define ipsec} {$endif}
 {$ifdef con2} {$define jpeg} {$endif}
 {$ifdef fpc} {$mode delphi}{$define laz} {$define d3laz} {$undef d3} {$else} {$define d3} {$define d3laz} {$undef laz} {$endif}
-uses gossroot, gossio, gosswin, gossimg, gossgui {$ifdef snd},gosssnd{$endif} {$ifdef gamecore},gamefiles{$endif};
+uses gosswin2, gossroot, gossio, gosswin, gossimg, gossgui {$ifdef snd},gosssnd{$endif} {$ifdef gamecore},gamefiles{$endif};
 {$align on}{$iochecks on}{$O+}{$W-}{$U+}{$V+}{$B-}{$X+}{$T-}{$P+}{$H+}{$J-} { set critical compiler conditionals for proper compilation - 10aug2025 }
 //## ==========================================================================================================================================================================================================================
 //##
@@ -30,9 +30,9 @@ uses gossroot, gossio, gosswin, gossimg, gossgui {$ifdef snd},gosssnd{$endif} {$
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. GameCore game support (gossgame.pas)
-//## Version.................. 4.00.11020 (+62)
+//## Version.................. 4.00.11024 (+66)
 //## Items.................... 9
-//## Last Updated ............ 08aug2025, 29jul2025, 14jul2025, 06jul2025, 11feb2025, 04feb2025, 01feb2025
+//## Last Updated ............ 02oct2025, 16sep2025, 08aug2025, 29jul2025, 14jul2025, 06jul2025, 11feb2025, 04feb2025, 01feb2025
 //## Lines of Code............ 15,100+
 //##
 //## main.pas ................ app code
@@ -40,7 +40,8 @@ uses gossroot, gossio, gosswin, gossimg, gossgui {$ifdef snd},gosssnd{$endif} {$
 //## gossio.pas .............. file io
 //## gossimg.pas ............. image/graphics
 //## gossnet.pas ............. network
-//## gosswin.pas ............. 32bit windows api's/xbox controller
+//## gosswin.pas ............. static Win32 api calls
+//## gosswin2.pas ............ dynamic Win32 api calls
 //## gosssnd.pas ............. sound/audio/midi/chimes
 //## gossgui.pas ............. gui management/controls
 //## gossdat.pas ............. app icons (24px and 20px) and help documents (gui only) in txt, bwd or bwp format
@@ -1410,6 +1411,7 @@ function pic8__addcol24(var x:tpiccore8;var xcount:longint;c24:tcolor24):byte;
 function pic8__addcol32(var x:tpiccore8;var xcount:longint;c32:tcolor32):byte;
 function pic8__toimage(var x:tpiccore8;d:tobject):boolean;
 function pic8__fromimage(var x:tpiccore8;s:tobject):boolean;
+function pic8__fromimage2(var x:tpiccore8;s:tobject;xAutoScaleToFit:boolean):boolean;
 function pic8__findindex(var x:tpiccore8;sx,sy:longint):longint;
 function pic8__findxy(var x:tpiccore8;pindex:longint):tpoint;
 function pic8__size(var x:tpiccore8;nw,nh:longint):boolean;
@@ -1454,12 +1456,13 @@ implementation
 //start-stop procs -------------------------------------------------------------
 procedure gossgame__start;
 var
-   xslot,xlen,p:longint;
+   xslot,p:longint;
    xtrigger:double;
-   x:pointer;
    xcompressed:boolean;
    {$ifdef gamecore}
    xname:string;
+   x:pointer;
+   xlen:longint;
    {$endif}
 begin
 try
@@ -1670,8 +1673,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,9)='gossgame.') then strdel1(xname,1,9) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.11020'
-else if (xname='date')       then result:='08aug2025'
+if      (xname='ver')        then result:='4.00.11024'
+else if (xname='date')       then result:='02oct2025'
 else if (xname='name')       then result:='GameCore'
 else
    begin
@@ -2525,6 +2528,7 @@ case game_menu.menu.items[p].calign of
 0:dx:=da.left;
 1:dx:=da.left + ((lw - game__textwidth(fitem,game_menu.menu.items[p].caption) ) div 2);
 2:dx:=da.left + lw - game__textwidth(fitem,game_menu.menu.items[p].caption);
+else dx:=da.left;
 end;//case
 
 game__drawtext(fitem,game_menu.menu.items[p].caption, dx, dy, game_menu.colors.text);
@@ -5098,7 +5102,7 @@ if game_drawing and (xline<>'') and (findex>=0) and (findex<game_fontlist.count)
    game_buftext.text:=xline;//reusable buffer
 
    //rednder text to image buffer
-   low__fromLGF_drawtext2432TAB('', game_fontlist.fonts[ findex ].lgf, game_buftext, dx,dy, game_bufferwidth, game_bufferheight, dcol, game_bufferarea, game_bufferarea, game_bufferrows, nil, nil, nil, 0, nil, 0, game_fontlist.fonts[ findex ].bold, false, false, false, false, false, false, 0);
+   low__fromLGF_drawtext2432TAB(0,'', game_fontlist.fonts[ findex ].lgf, game_buftext, dx,dy, game_bufferwidth, game_bufferheight, dcol, game_bufferarea, game_bufferarea, game_bufferrows, nil, nil, nil, 0, nil, 0, game_fontlist.fonts[ findex ].bold, false, false, false, false, false, false, 0);
 
    end;
 
@@ -5114,7 +5118,7 @@ if game_drawing and (xline<>'') and (findex>=0) and (findex<game_fontlist.count)
    game_buftext.text:=xline;//reusable buffer
 
    //rednder text to image buffer
-   low__fromLGF_drawtext2432TAB(xtab, game_fontlist.fonts[ findex ].lgf, game_buftext, dx,dy, game_bufferwidth, game_bufferheight, dcol, game_bufferarea, game_bufferarea, game_bufferrows, nil, nil, nil, 0, nil, 0, game_fontlist.fonts[ findex ].bold, false, false, false, false, false, false, 0);
+   low__fromLGF_drawtext2432TAB(0,xtab, game_fontlist.fonts[ findex ].lgf, game_buftext, dx,dy, game_bufferwidth, game_bufferheight, dcol, game_bufferarea, game_bufferarea, game_bufferrows, nil, nil, nil, 0, nil, 0, game_fontlist.fonts[ findex ].bold, false, false, false, false, false, false, 0);
 
    end;
 
@@ -6548,6 +6552,58 @@ end;//sy
 result:=true;
 skipend:
 except;end;
+end;
+
+function pic8__fromimage2(var x:tpiccore8;s:tobject;xAutoScaleToFit:boolean):boolean;
+label
+   skipend;
+var
+   a:tbasicimage;
+   xsize,sbits,sw,sh,dw,dh:longint;
+begin
+
+//defaults
+result :=false;
+a      :=nil;
+
+try
+//check
+if not misok82432(s,sbits,sw,sh) then exit;
+
+//init
+xsize:=pic8__safewh(max32);
+
+
+//get
+if ((sw<xsize) and (sh<xsize)) or (not xAutoScaleToFit) then
+   begin
+
+   a:=misimg32(1,1);
+   if not mis__copy(s,a)              then goto skipend;
+   if not mis__reducecolors256(a,127) then goto skipend;
+
+   result:=pic8__fromimage(x,a);
+
+   end
+else
+   begin
+
+   a:=misimg32(1,1);
+
+   low__scaledown(xsize,xsize,sw,sh,dw,dh);
+   missize(a,dw,dh);
+   mis__cls(a,0,0,0,0);
+
+   result:=mis__copyfast82432(misarea(a),0,0,dw,dh,misarea(s),a,s) and mis__reducecolors256(a,127) and pic8__fromimage(x,a);
+
+   end;
+
+skipend:
+except;end;
+
+//free
+freeobj(@a);
+
 end;
 
 function pic8__fromimage(var x:tpiccore8;s:tobject):boolean;
@@ -12879,8 +12935,9 @@ function ttex.getdata__forundo:string;
 
    procedure vadd(const xdata:string);
    begin
-   result:=result+from32bit(low__len(xdata))+xdata;
+   result:=result+str__from32(low__len(xdata))+xdata;
    end;
+   
 begin
 result:='undo:';
 vadd(getdata);
@@ -12900,7 +12957,7 @@ var
    result:='';
 
    //get
-   xlen:=to32bit( strcopy1(x,xpos,4) );
+   xlen:=str__to32( strcopy1(x,xpos,4) );
    inc(xpos,4);
 
    if (xlen>=1) then

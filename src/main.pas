@@ -30,10 +30,10 @@ uses gossroot, {$ifdef gui}gossgui,{$endif} {$ifdef snd}gosssnd,{$endif} gosswin
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. app code (main.pas)
-//## Version.................. 1.00.2022 (+30)
+//## Version.................. 1.00.2047 (+34)
 //## Items.................... 2
-//## Last Updated ............ 12jun2025, 13may2025
-//## Lines of Code............ 2,700+
+//## Last Updated ............ 07nov2025, 15sep2025, 12jun2025, 13may2025
+//## Lines of Code............ 2,800+
 //##
 //## main.pas ................ app code
 //## gossroot.pas ............ console/gui app startup and control
@@ -51,7 +51,7 @@ uses gossroot, {$ifdef gui}gossgui,{$endif} {$ifdef snd}gosssnd,{$endif} gosswin
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
 //## | tapp                   | tbasicapp         | 1.00.142  | 12jun2025   | App - 09jun2025, 09may2025
-//## | tmicon                 | tbasiccontrol     | 1.00.1850 | 12jun2025   | Multi-icon editor - 09jun2025, 09may2025, 06may2025
+//## | tmicon                 | tbasiccontrol     | 1.00.1871 | 15sep2025   | Multi-icon editor - 12jun2025, 09jun2025, 09may2025, 06may2025
 //## ==========================================================================================================================================================================================================================
 //## Performance Note:
 //##
@@ -68,8 +68,8 @@ var
 
 
 type
+
 {tmicon}
-//xxxxxxxxxxxxxxxxxxxx//111111111111111111111111111111
    tmiconinfo=record
     id :longint;//data id
     ref:string;//settings info
@@ -91,8 +91,9 @@ type
     icustommask,icustommask2,iscaleimg:tbasicimage;
     iscaleimgref:string;
     //.other
-    imaskid,imaskid2,ilastbackmode,ibackcolor,ibackmode,imaster,iico_bytes,ires_bytes,irotate,ipngQuality,igridsize,ilastmaskfilter,ilastopenfilter,ifocusindex,ihoverindex:longint;
-    icanforce,imaskdel,inewfocus,iupscale,iflip,imirror,ishowframe:boolean;
+    ilangarea:twinrect;
+    ilangid,imaskid,imaskid2,ilastbackmode,ibackcolor,ibackmode,imaster,iico_bytes,ires_bytes,irotate,ipngQuality,igridsize,ilastmaskfilter,ilastopenfilter,ifocusindex,ihoverindex:longint;
+    ilanghover,icanforce,imaskdel,inewfocus,iupscale,iflip,imirror,ishowframe:boolean;
     isettingsref,ishape,ilastmaskfile,ilastopenfile,ilastsavefile:string;
     iflashON:boolean;
     iico_data,ires_data:tstr8;
@@ -115,6 +116,8 @@ type
     procedure xsaveas(xres:boolean);
     procedure xonshowmenuFill1(sender:tobject;xstyle:string;xmenudata:tstr8;var ximagealign:longint;var xmenuname:string);
     function xonshowmenuClick1(sender:tbasiccontrol;xstyle:string;xcode:longint;xcode2:string;xtepcolor:longint):boolean;
+    procedure xlangidCustom;
+    procedure setlangid(x:longint);
     procedure setpngQuality(x:longint);
     procedure setbackmode(x:longint);
     function findbackcolor:longint;
@@ -142,6 +145,7 @@ type
     function _onnotify(sender:tobject):boolean; override;
     function _onaccept(sender:tobject;xfolder,xfilename:string;xindex,xcount:longint):boolean;
     //information
+    property langid:longint        read ilangid write setlangid;//14sep2025
     property pngQuality:longint    read ipngQuality write setpngQuality;
     property backmode:longint      read ibackmode write setbackmode;
     property backcolor:longint     read ibackcolor write ibackcolor;
@@ -249,8 +253,10 @@ xname:=strlow(xname);
 if      (xname='slogan')              then result:=info__app('name')+' by Blaiz Enterprises'
 else if (xname='width')               then result:='1100'
 else if (xname='height')              then result:='700'
-else if (xname='ver')                 then result:='1.00.2022'
-else if (xname='date')                then result:='12jun2025'
+else if (xname='language')            then result:='english-australia'//14sep2025 - for Clyde
+else if (xname='codepage')            then result:='1252'
+else if (xname='ver')                 then result:='1.00.2047'
+else if (xname='date')                then result:='07nov2025'
 else if (xname='name')                then result:='Multi Icon'
 else if (xname='web.name')            then result:='multiicon'//used for website name
 else if (xname='des')                 then result:='Reliably create and save a multi-resolution icon (.ico) or "mainicon" resource (.res) with ease'
@@ -455,6 +461,9 @@ inherited create2(xparent,false);
 
 //var
 itimer500        :=ms64;
+ilangid          :=0;//14sep2025
+ilangarea        :=area__nil;
+ilanghover       :=false;
 bordersize       :=0;
 oautoheight      :=true;
 ihoverindex      :=-1;
@@ -592,6 +601,21 @@ freeobj(@igrid);
 //self
 inherited destroy;
 except;end;
+end;
+
+procedure tmicon.setlangid(x:longint);
+begin
+ilangid:=frcrange32(x,0,max16);
+end;
+
+procedure tmicon.xlangidCustom;
+var
+   str1:string;
+begin
+
+str1:=intstr32(ilangid);
+if gui.popedit(str1,'Custom Language ID','Language|Enter a custom language ID value in the range of 0..'+k64(max16)) then langid:=strint32(str1);
+
 end;
 
 procedure tmicon.setpngQuality(x:longint);
@@ -806,7 +830,8 @@ var
 
    str__addint4(xdata,0);//data version(4)
    str__aadd(xdata,[48,16]);//memory flags(2)
-   str__aadd(xdata,[9,12]);//languageid(2)
+//was:   str__aadd(xdata,[9,12]);//languageid(2)
+   str__addwrd2(xdata,ilangid);//languageid(2)
    str__addint4(xdata,0);//version(4)
    str__addint4(xdata,0);//characteristics(4)
    end;
@@ -855,7 +880,8 @@ if xres then
    str__aadd(xdata,[0,0,0,0]);//null
 
    str__aadd(xdata,[48,16]);//memory flags(2)
-   str__aadd(xdata,[9,12]);//languageid(2)
+   //was:  str__aadd(xdata,[9,12]);//languageid(2)
+   str__addwrd2(xdata,ilangid);//languageid(2)
 
    str__aadd(xdata,[0,0,0,0]);//version(4)
    str__aadd(xdata,[0,0,0,0]);//characteristics(4)
@@ -955,6 +981,7 @@ end;
 procedure tmicon._ontimer(sender:tobject);
 begin
 try
+
 //timer500
 if (ms64>=itimer500) then
    begin
@@ -967,6 +994,7 @@ if (ms64>=itimer500) then
 
 //sync
 if xsyncimages then paintnow;
+
 except;end;
 end;
 
@@ -1093,6 +1121,9 @@ result:=xcanchange(xfindfocusindex);
 end;
 
 procedure tmicon.xonshowmenuFill1(sender:tobject;xstyle:string;xmenudata:tstr8;var ximagealign:longint;var xmenuname:string);
+var
+   p,xcode:longint;
+   xcaption,xlabel:string;
 begin
 try
 //check
@@ -1109,7 +1140,29 @@ if (xstyle='menu.image') then
 
    low__menuitem2(xmenudata,tepPaste20,'Paste','Image|Paste image from Clipboard','micon.paste',100,aknone,canpaste);
    low__menuitem2(xmenudata,tepOpen20,'Open','Image|Open an image from file','micon.open',100,aknone,canopen);
+   end
+else if (xstyle='langid') then
+   begin
+
+   low__menutitle(xmenudata,tepNone,'Select Language','');
+
+   for p:=0 to max32 do
+   begin
+
+   if res__listenglish__langcode2(p,xcaption,xlabel,xcode) then
+      begin
+
+      low__menuitem2(xmenudata,tep__tick(ilangid=xcode),xcaption+'  '+intstr32(xcode),'Language|Set resource language ID to '+k64(xcode)+' "'+xlabel+'"','micon.langid.'+intstr32(xcode),100,aknone,true);
+
+      end
+   else break;
+
+   end;//p
+
+   low__menuitem2(xmenudata,tepEdit20,'Custom...','Language|Set a custom resource language ID','micon.langid.custom',100,aknone,true);
+
    end;
+
 except;end;
 end;
 
@@ -1138,7 +1191,7 @@ end;
 
 function tmicon.settingsref:string;
 begin
-result:=bolstr(imaskdel)+bolstr(iupscale)+bolstr(ishowframe)+bolstr(imirror)+bolstr(iflip)+'|'+intstr32(ibackcolor)+'|'+intstr32(ibackmode)+'|'+intstr32(irotate)+'|'+intstr32(ipngquality)+'|'+intstr32(imaster)+'|'+shape;
+result:=bolstr(imaskdel)+bolstr(iupscale)+bolstr(ishowframe)+bolstr(imirror)+bolstr(iflip)+'|'+intstr32(ibackcolor)+'|'+intstr32(ibackmode)+'|'+intstr32(irotate)+'|'+intstr32(ilangid)+'|'+intstr32(ipngquality)+'|'+intstr32(imaster)+'|'+shape;
 end;
 
 function tmicon.xsettingschanged(xreset:boolean):boolean;
@@ -1156,7 +1209,7 @@ begin
 xindex:=xsafeindex(xindex);
 
 //get
-result:=intstr32(imaster)+'|'+intstr32(imaskid2)+'|'+intstr32(imaskid)+'|'+bolstr(imaskdel)+bolstr(iupscale)+bolstr(imirror)+bolstr(iflip)+'|'+intstr32(irotate)+'|'+intstr32(low__aorb(0,ipngquality,xindex=0))+'|'+intstr32(low__aorb(ilist[xindex].id,ilist[0].id,imaster>=1))+'|'+shape;
+result:=intstr32(imaster)+'|'+intstr32(imaskid2)+'|'+intstr32(imaskid)+'|'+bolstr(imaskdel)+bolstr(iupscale)+bolstr(imirror)+bolstr(iflip)+'|'+intstr32(irotate)+'|'+intstr32(ilangid)+'|'+intstr32(low__aorb(0,ipngquality,xindex=0))+'|'+intstr32(low__aorb(ilist[xindex].id,ilist[0].id,imaster>=1))+'|'+shape;
 end;
 
 function tmicon.xsyncimages:boolean;
@@ -1441,6 +1494,10 @@ else if mv('shape.') then
       end;
 
    end
+
+else if m('langid.custom') then xlangidCustom
+else if mv('langid.')   then langid:=strint32(v)//14sep2025
+
 else if m('flip')       then iflip:=not iflip
 else if m('mirror')     then imirror:=not imirror
 else if m('upscale')    then iupscale:=not iupscale
@@ -1654,20 +1711,23 @@ end;
 function tmicon._onnotify(sender:tobject):boolean;
 var
    xmustpaint:boolean;
-   int1:longint;
-   str1:string;
+   xcode,xtepcolor,int1:longint;
+   xcode2,str1:string;
 begin
 //defaults
-result    :=false;
-xmustpaint:=false;
+result      :=false;
+xmustpaint  :=false;
 
 try
 
 //hover + focus + help
 if gui.mousemoved or gui.mousedownstroke then
    begin
+
    //hover
    if low__setint(ihoverindex,xfindindex(mousemovexy.x,mousemovexy.y)) then xmustpaint:=true;
+
+   if low__setbol(ilanghover,area__within2(ilangarea,mousemovexy))    then xmustpaint:=true;//14sep2024
 
    //focus
    if gui.mousedownstroke then
@@ -1716,7 +1776,14 @@ if gui.mouseupstroke and (ifocusindex>=0) then
    //showmenu
    else if gui.mouseright then showmenu2('menu.image');
 
+   end
+else if gui.mouseupstroke and ilanghover then
+   begin
+
+   showmenu2('langid');
+
    end;
+
 
 //paint
 if xmustpaint then paintnow;
@@ -1821,10 +1888,10 @@ end;
 procedure tmicon._onpaint(sender:tobject);
 var
    a:tclientinfo;
-   xdetailsbottom,v,p,xsize,xhoverindex,xfocusindex,xnext,xzoom,hpad,vpad,dx,dy,dy0:longint;
-   str1:string;
-   xusetab:boolean;
+   xusetab,xdetailsbottom,v,p,xsize,xhoverindex,xfocusindex,xnext,xzoom,hpad,vpad,dx,dy,dy0:longint;
+   xtab,str1:string;
    xtmp:tstr8;
+   xislang:boolean;
 
    procedure xdraw(xindex:longint;var dx,dy:longint);
    var
@@ -1917,6 +1984,18 @@ var
    dx:=xnext + round(1.3*hpad);
    dy:=dy0;
    end;
+
+   function xlangid:string;
+   var
+      n,xcaption,xlabel:string;
+      xcode,xindex:longint;
+   begin
+
+   if res__findlanginfo(ilangid,xcaption,xlabel,xcode,xindex) then n:=xcaption else n:='Custom';
+   result  :='language is '+intstr32(ilangid)+' ('+n+')';
+
+   end;
+
 begin
 try
 //defaults
@@ -1958,7 +2037,9 @@ xdetailsbottom:=dy+a.fnH;
 
 for p:=(4+high(ilist)) downto -1 do
 begin
-xusetab:=true;
+
+xusetab :=1;
+xislang :=false;
 
 if (p=-1) then
    begin
@@ -1971,13 +2052,40 @@ else if xvalidindex(p) then str1:=ilist[p].f +#9+ k64(ilist[p].s)+' x '+k64(ilis
 else if (p=(2+high(ilist))) then
    begin
    str1:='Format Storage Size';
-   xusetab:=false;
+   xusetab:=0;
    end
 else if (p=(3+high(ilist))) then str1:='ICO'+#9+k64(iico_bytes)+' b'
-else if (p=(4+high(ilist))) then str1:='RES'+#9+k64(ires_bytes)+' b'
+else if (p=(4+high(ilist))) then
+   begin
+   str1:='RES'+#9+k64(ires_bytes)+' b'+#9+xlangid;
+   xusetab :=2;
+   xislang :=true;
+   end
 else                             str1:='';
 
-if (str1<>'') then ldtTAB2(clnone,insstr('L50;R100;R70;R95;',xusetab),a.ci,dx,dy,a.font,str1,a.fn,a.f,false,false,false,false,a.r);
+if (str1<>'') then
+   begin
+
+   case xusetab of
+   1    :xtab:='L50;R100;R70;R95;';
+   2    :xtab:='L50;R100;L250;';
+   else  xtab:='';
+   end;//case
+
+   if xislang then ilangarea:=area__make(dx,dy,dx+low__fonttextwidthTAB2(xtab,a.fn,str1),dy+a.fnH-1);
+
+   case xislang and ilanghover of
+   true:begin
+
+      ldsoSHADE(ilangarea,int__splice24(0.15,a.font,a.back),a.font,clnone,0,'g-50',true,a.r);
+      ldtTAB2(clnone,xtab,a.ci,dx,dy,a.back,str1,a.fn,a.f,false,false,false,false,a.r);
+
+      end;
+   else ldtTAB2(clnone,xtab,a.ci,dx,dy,a.font,str1,a.fn,a.f,false,false,false,false,a.r);
+   end;//case
+
+   end;
+
 dec(dy,a.fnH);
 end;
 
@@ -2130,6 +2238,10 @@ end;
 
 with rootwin.xhead do
 begin
+add('Copy',tepCopy20,0,'micon.copy','Image|Copy image to Clipboard');
+add('Paste',tepPaste20,0,'micon.paste','Image|Paste image from Clipboard');
+add('Open',tepOpen20,0,'micon.open','Image|Open an image from file');
+addsep;
 add('Save ICO',tepSaveAs20,0,'micon.saveico','Save Icon|Save multi-resolution icon to file');
 add('Save RES',tepSaveAs20,0,'micon.saveres','Save Resource|Save multi-resolution icon resource (mainicon) to file');
 addsep;
@@ -2192,40 +2304,49 @@ end;
 procedure tapp.xupdatebuttons;
 var
    slabel,shelp,scmd,sshape:string;
-   bol1:boolean;
+   xcancopy,xcanpaste,xcansave,xcanopen:boolean;
    step,p:longint;
 begin
 try
 
+//init
+xcancopy                    :=icore.cancopy;
+xcanpaste                   :=icore.canpaste;
+xcansave                    :=icore.cansave;
+xcanopen                    :=icore.canopen;
+
+
 with rootwin.xtoolbar2 do
 begin
-benabled2['micon.upscale']:=(icore.master>=1);
+benabled2['micon.upscale']  :=(icore.master>=1);
 
-bmarked2['micon.upscale']:=icore.upscale;
-bmarked2['micon.master0']:=(icore.master=0);
-bmarked2['micon.master1']:=(icore.master=1);
-bmarked2['micon.master2']:=(icore.master=2);
-bmarked2['micon.master3']:=(icore.master=3);
+bmarked2['micon.upscale']   :=icore.upscale;
+bmarked2['micon.master0']   :=(icore.master=0);
+bmarked2['micon.master1']   :=(icore.master=1);
+bmarked2['micon.master2']   :=(icore.master=2);
+bmarked2['micon.master3']   :=(icore.master=3);
 
-benabled2['micon.clear']:=icore.canclear;
-benabled2['micon.copy']:=icore.cancopy;
-benabled2['micon.copyraw']:=icore.cancopyraw;
-benabled2['micon.paste']:=icore.canpaste;
-benabled2['micon.open']:=icore.canopen;
+benabled2['micon.clear']    :=icore.canclear;
+benabled2['micon.copy']     :=xcancopy;
+benabled2['micon.copyraw']  :=icore.cancopyraw;
+benabled2['micon.paste']    :=xcanpaste;
+benabled2['micon.open']     :=xcanopen;
 
-bhelp2['micon.copy']:=icore.copyhint(false);
-bhelp2['micon.copyraw']:=icore.copyhint(true);
+bhelp2['micon.copy']        :=icore.copyhint(false);
+bhelp2['micon.copyraw']     :=icore.copyhint(true);
 
-bol1:=icore.cansave;
-benabled2['micon.saveico']:=bol1;
-benabled2['micon.saveres']:=bol1;
+benabled2['micon.saveico']  :=xcansave;
+benabled2['micon.saveres']  :=xcansave;
 end;
 
 with rootwin.xhead do
 begin
-bol1:=icore.cansave;
-benabled2['micon.saveico']:=bol1;
-benabled2['micon.saveres']:=bol1;
+bhelp2['micon.copy']        :=icore.copyhint(false);
+benabled2['micon.copy']     :=xcancopy;
+benabled2['micon.paste']    :=xcanpaste;
+benabled2['micon.open']     :=xcanopen;
+benabled2['micon.saveico']  :=xcansave;
+benabled2['micon.saveres']  :=xcansave;
 end;
 
 //.shapes
@@ -2332,6 +2453,7 @@ if zznil(prgsettings,5001) then exit;
 //init
 a:=vnew2(950);
 //filter
+a.i['langid']         :=prgsettings.idef('langid',1033);//English-US - 15sep2025
 a.i['png.quality']    :=prgsettings.idef('png.quality',0);
 a.i['backmode']       :=prgsettings.idef('backmode',0);
 a.i['backcolor']      :=prgsettings.idef('backcolor',rgba0__int(127,127,127));
@@ -2349,6 +2471,7 @@ a.b['maskdel']        :=prgsettings.bdef('maskdel',true);//09jun2025
 prgsettings.data:=a.data;
 
 //set
+icore.langid         :=a.i['langid'];
 icore.pngquality     :=a.i['png.quality'];
 icore.backmode       :=a.i['backmode'];
 icore.backcolor      :=a.i['backcolor'];
@@ -2380,6 +2503,7 @@ a:=nil;
 a:=vnew2(951);
 
 //get
+a.i['langid']         :=icore.langid;//14sep2025
 a.i['png.quality']    :=icore.pngquality;
 a.i['backmode']       :=icore.backmode;
 a.i['backcolor']      :=icore.backcolor;
