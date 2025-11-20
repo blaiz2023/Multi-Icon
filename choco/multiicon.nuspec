@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>multiicon</id>
-    <version>1.0.2022</version>
+    <version>1.0.2047</version>
     <title>Multi Icon</title>
     <authors>Blaiz Enterprises</authors>
     <owners>Blaiz Enterprises</owners>
@@ -12,7 +12,7 @@
     <iconUrl>https://rawcdn.githack.com/blaiz2023/Multi-Icon/81e3ed41fe52e2b1de18e0fe7cc4341375d4d509/images/multiicon-256.png</iconUrl>
     <description>Create stunning, high quality (256 x 256) multi-resolution icons (.ico) and "mainicon" resources (.res) with ease and reliability.  Open an image from file, or paste one in with transparency, or drag and drop an image directly onto the corresponding icon resolutions, then save.
 
-![Multi Icon v1.0.2022 Screenshot](https://rawcdn.githack.com/blaiz2023/Multi-Icon/81e3ed41fe52e2b1de18e0fe7cc4341375d4d509/images/multiicon-screenshot.jpg)
+![Multi Icon v1.0.2047 Screenshot](https://rawcdn.githack.com/blaiz2023/Multi-Icon/81e3ed41fe52e2b1de18e0fe7cc4341375d4d509/images/multiicon-screenshot.jpg)
 
 The multi-resolution icon stores a 256 x 256 image in PNG format, and five images at 64 x 64, 48 x 48, 32 x 32, 24 x 24 and 16 x 16 in native Windows icon format for maximum compatibility, back to Windows 95.
 
@@ -41,7 +41,7 @@ Features
 * Portable</description>
     <summary>Create stunning, high quality (256 x 256) multi-resolution icons (.ico) and "mainicon" resources (.res) with ease and reliability.</summary>
     <copyright>2025 Blaiz Enterprises</copyright>
-    <tags>create make 256px high quality icon mainicon res ico</tags>
+    <tags>create make 256px high quality icon mainicon res ico image</tags>
     <projectSourceUrl>https://github.com/blaiz2023/Multi-Icon</projectSourceUrl>
     <packageSourceUrl>https://github.com/blaiz2023/Multi-Icon/tree/main/choco</packageSourceUrl>
     <docsUrl>https://www.blaizenterprises.com/multiicon.html#help</docsUrl>
